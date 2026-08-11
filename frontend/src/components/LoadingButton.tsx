@@ -7,6 +7,7 @@ export interface LoadingButtonProps
   loading?: boolean;
   loadingText?: string;
   variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
 }
 
@@ -20,12 +21,19 @@ const VARIANTS = {
   ghost: "text-foreground hover:bg-slate-100 focus-visible:outline-primary",
 };
 
+const SIZES = {
+  sm: "h-9 px-4 text-sm",
+  md: "h-11 px-5 text-base",
+  lg: "h-12 px-6 text-base",
+};
+
 export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
   function LoadingButton(
     {
       loading = false,
       loadingText,
       variant = "primary",
+      size = "md",
       fullWidth = false,
       disabled,
       className,
@@ -40,11 +48,12 @@ export const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         disabled={disabled || loading}
         aria-busy={loading}
         className={cn(
-          "inline-flex h-12 select-none items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold",
+          "inline-flex select-none items-center justify-center gap-2 rounded-xl font-semibold",
           "shadow-sm transition-all duration-150",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-60",
           VARIANTS[variant],
+          SIZES[size],
           fullWidth && "w-full",
           className,
         )}

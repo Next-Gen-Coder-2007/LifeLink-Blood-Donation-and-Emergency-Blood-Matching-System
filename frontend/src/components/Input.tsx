@@ -37,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             "h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-foreground shadow-sm transition-colors",
             "placeholder:text-slate-400",
             "focus:outline-none focus:ring-2 focus:ring-primary/30",
-            icon && "pl-10",
+            icon && Boolean(icon) ? "pl-10" : undefined,
             error
               ? "border-red-300 focus:border-red-400"
               : "border-line hover:border-slate-300 focus:border-primary",

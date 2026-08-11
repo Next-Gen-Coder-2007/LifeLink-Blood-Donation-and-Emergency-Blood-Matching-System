@@ -54,4 +54,4 @@ export type LocationState = {
   error?: string;
 };
 
-export type FieldErrors<T extends Record<string, unknown>> = Partial<Record<keyof T, string>>;
+export type FieldErrors<T> = Partial<Record<keyof T, string>>;

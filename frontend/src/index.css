@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-primary-dark;
+  }
+
+  :focus-visible {
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .h-4\.5 {
+    height: 1.125rem;
+  }
+
+  .w-4\.5 {
+    width: 1.125rem;
+  }
+}

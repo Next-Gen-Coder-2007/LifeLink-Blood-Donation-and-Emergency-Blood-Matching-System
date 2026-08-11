@@ -56,14 +56,14 @@ function renderChildren({
     throw new Error("Button asChild expects a single React element child.");
   }
 
-  const child = children as ReactElement<{ className?: string }>;
+  const child = children as ReactElement<Record<string, unknown>>;
 
   return cloneElement(child, {
     ...rest,
-    className: cn(className, child.props.className),
+    className: cn(className, (child.props.className as string) || undefined),
     "aria-disabled": disabled || loading ? true : undefined,
     tabIndex: disabled || loading ? -1 : undefined,
-  });
+  } as Record<string, unknown>);
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

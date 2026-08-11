@@ -70,6 +70,7 @@ export function LocationInput({
 
   return (
     <div className="grid gap-5 sm:grid-cols-2">
+      {children}
       <Input
         type="number"
         step="0.00001"
@@ -134,7 +135,6 @@ export function LocationInput({
           </p>
         )}
       </div>
-      {children}
     </div>
   );
 }
