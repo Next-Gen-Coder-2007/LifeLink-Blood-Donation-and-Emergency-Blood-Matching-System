@@ -5,10 +5,8 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { Input } from "@/components/Input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { LoadingButton } from "@/components/LoadingButton";
-import { login } from "@/lib/mockAuth";
 import { isValidEmail } from "@/lib/validation";
 import { useToast } from "@/context/ToastContext";
-import type { LoginCredentials } from "@/types";
 
 interface LoginErrors {
   email?: string;
@@ -41,6 +39,10 @@ export function LoginPage() {
   const [errors, setErrors] = useState<LoginErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const targetPath =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ||
+    "/dashboard";
+
   const validate = (): LoginErrors => {
     const next: LoginErrors = {};
     if (!email.trim()) next.email = "Email is required.";
@@ -51,21 +53,68 @@ export function LoginPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     const next = validate();
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+
+    if (Object.keys(next).length > 0) {
+      return;
+    }
 
     setSubmitting(true);
+
     try {
-      const session = await login({ email, password } as LoginCredentials);
-      if (!remember) {
-        // Simulated "remember me" — in a real app, persist the session for longer.
+      const response = await fetch("http://127.0.0.1:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Invalid email or password");
       }
-      showToast(`Welcome back, ${session.user.name.split(" ")[0]}!`);
-      const from = (location.state as { from?: string } | null)?.from;
-      navigate(from ?? "/dashboard", { replace: true });
-    } catch {
-      showToast("Unable to log in with those credentials.", "error");
+
+      const data = await response.json();
+
+      // ==========================================
+      // CONSTRUCT SESSION OBJECT FOR DASHBOARD
+      // ==========================================
+      const sessionData = {
+        user: {
+          id: data.user_id || data.id || "1",
+          name: data.name || "User",
+          email: data.email || email,
+          role: data.role || "donor",
+        },
+        token: data.access_token || "token",
+      };
+
+      // Save formatted session object expected by getCurrentSession()
+      localStorage.setItem("user", JSON.stringify(sessionData));
+      localStorage.setItem("lifelink_session", JSON.stringify(sessionData));
+
+      // Dispatch event to refresh state listeners
+      window.dispatchEvent(new Event("storage"));
+
+      const firstName = sessionData.user.name.split(" ")[0];
+      showToast(`Welcome back, ${firstName}!`);
+
+      // Navigate to dashboard
+      navigate(targetPath, { replace: true });
+    } catch (error) {
+      console.error(error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Unable to log in with those credentials.",
+        "error"
+      );
     } finally {
       setSubmitting(false);
     }

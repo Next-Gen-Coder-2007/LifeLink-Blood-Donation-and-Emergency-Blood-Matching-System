@@ -9,7 +9,6 @@ import { FormSection } from "@/components/FormSection";
 import { LocationInput } from "@/components/LocationInput";
 import { Toggle } from "@/components/Toggle";
 import { LoadingButton } from "@/components/LoadingButton";
-import { registerDonor } from "@/lib/mockAuth";
 import {
   isValidCoordinate,
   isValidEmail,
@@ -94,23 +93,109 @@ export function DonorRegisterPage() {
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const next = validate();
-    setErrors(next);
-    if (Object.values(next).some(Boolean)) return;
+  event.preventDefault();
 
-    setSubmitting(true);
-    try {
-      await registerDonor(form);
-      showToast("Donor registration successful!");
-      navigate("/dashboard", { replace: true });
-    } catch {
-      showToast("Registration failed. Please try again.", "error");
-    } finally {
-      setSubmitting(false);
+  const next = validate();
+  setErrors(next);
+
+  if (Object.values(next).some(Boolean)) {
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    // ==========================================
+    // 1. CREATE USER
+    // ==========================================
+
+    const userResponse = await fetch(
+      "http://127.0.0.1:8000/users",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password_hash: form.password,
+          role: "donor",
+        }),
+      }
+    );
+
+    if (!userResponse.ok) {
+      const error = await userResponse.json();
+
+      throw new Error(
+        error.detail || "Failed to create user"
+      );
     }
-  };
 
+    const userData = await userResponse.json();
+
+    console.log("User created:", userData);
+
+    // ==========================================
+    // 2. CREATE DONOR PROFILE
+    // ==========================================
+
+    const donorResponse = await fetch(
+      `http://127.0.0.1:8000/users/${userData.user_id}/donor`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          blood_group: form.blood_group,
+          phone: form.phone,
+          latitude: form.latitude,
+          longitude: form.longitude,
+          availability: form.availability,
+          last_donation_date:
+            form.last_donation_date || null,
+        }),
+      }
+    );
+
+    if (!donorResponse.ok) {
+      const error = await donorResponse.json();
+
+      throw new Error(
+        error.detail || "Failed to create donor profile"
+      );
+    }
+
+    const donorData = await donorResponse.json();
+
+    console.log("Donor created:", donorData);
+
+    // ==========================================
+    // SUCCESS
+    // ==========================================
+
+    showToast("Donor registration successful!");
+
+    navigate("/dashboard", {
+      replace: true,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    showToast(
+      error instanceof Error
+        ? error.message
+        : "Registration failed. Please try again.",
+      "error"
+    );
+
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <RegistrationLayout
       title="Become a LifeLink Donor"

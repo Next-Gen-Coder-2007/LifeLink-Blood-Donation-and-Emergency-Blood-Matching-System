@@ -10,29 +10,46 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/Button";
-import { clearSession, getCurrentSession } from "@/lib/mockAuth";
 import { useToast } from "@/context/ToastContext";
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const session = getCurrentSession();
+
+  // Safely parse user session directly from localStorage
+  const getSession = () => {
+    try {
+      const stored = localStorage.getItem("user") || localStorage.getItem("lifelink_session");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const session = getSession();
 
   const handleLogout = () => {
-    clearSession();
+    localStorage.removeItem("user");
+    localStorage.removeItem("lifelink_session");
     showToast("You have been logged out.", "info");
     navigate("/login", { replace: true });
   };
 
-  const initials = session?.user.name
+  // Safe fallbacks for user details regardless of FastAPI response shape
+  const userName = session?.user?.name || session?.name || "User";
+  const userEmail = session?.user?.email || session?.email || "user@lifelink.com";
+  const userRole = session?.user?.role || session?.role || "donor";
+
+  const initials = userName
     .split(" ")
-    .map((part) => part[0])
+    .map((part: string) => part[0])
+    .filter(Boolean)
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
   const roleLabel =
-    session?.user.role === "hospital" ? "Hospital" : "Donor";
+    userRole.toLowerCase() === "hospital" ? "Hospital" : "Donor";
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -50,15 +67,15 @@ export function DashboardPage() {
         <div className="rounded-3xl border border-line bg-white p-8 shadow-card sm:p-12">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
             <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-xl font-bold text-white shadow-sm">
-              {initials ?? "LL"}
+              {initials || "LL"}
             </span>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Welcome to LifeLink
+                Welcome back, {userName}!
               </h1>
               <p className="mt-1.5 flex items-center gap-2 text-sm text-muted">
                 <ShieldCheck className="h-4 w-4 text-secondary" aria-hidden />
-                Signed in as {session?.user.email} &middot; {roleLabel}
+                Signed in as {userEmail} &middot; {roleLabel}
               </p>
             </div>
           </div>
@@ -67,12 +84,10 @@ export function DashboardPage() {
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
             <div>
               <p className="font-semibold text-emerald-800">
-                Your account has been created successfully.
+                You are successfully logged in.
               </p>
               <p className="mt-1 text-sm text-emerald-700">
-                In the next phase, this dashboard will show your blood group,
-                availability status, nearby emergency requests, and hospital
-                coordination — powered by a connected backend.
+                Your FastAPI session is active and connected to the dashboard.
               </p>
             </div>
           </div>
@@ -95,7 +110,7 @@ export function DashboardPage() {
               </span>
               <div>
                 <p className="text-xs font-medium text-muted">Location</p>
-                <p className="text-sm font-semibold text-foreground">Set at sign-up</p>
+                <p className="text-sm font-semibold text-foreground">Active</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-line bg-background p-5">
@@ -104,7 +119,7 @@ export function DashboardPage() {
               </span>
               <div>
                 <p className="text-xs font-medium text-muted">Network</p>
-                <p className="text-sm font-semibold text-foreground">Live soon</p>
+                <p className="text-sm font-semibold text-foreground">Connected</p>
               </div>
             </div>
           </div>

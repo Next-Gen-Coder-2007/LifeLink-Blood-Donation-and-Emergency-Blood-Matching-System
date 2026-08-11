@@ -33,13 +33,9 @@ export default function App() {
         <Route path="/register/donor" element={<DonorRegisterPage />} />
         <Route path="/register/hospital" element={<HospitalRegisterPage />} />
         <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+  path="/dashboard"
+  element={<DashboardPage />}
+/>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

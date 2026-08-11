@@ -69,3 +69,7 @@ class HospitalResponse(BaseModel):
     latitude: float
     longitude: float
     address: str
+    
+class LoginRequest(BaseModel):
+    email: str
+    password: str

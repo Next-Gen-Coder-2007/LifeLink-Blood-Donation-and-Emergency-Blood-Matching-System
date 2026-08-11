@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
-
 from fastapi import FastAPI, HTTPException
 from pymongo.errors import DuplicateKeyError
+from fastapi.middleware.cors import CORSMiddleware
 
 from database import (
     users_collection,
@@ -12,7 +12,8 @@ from database import (
 from models import (
     UserCreate,
     DonorCreate,
-    HospitalCreate
+    HospitalCreate,
+    LoginRequest
 )
 
 
@@ -20,6 +21,17 @@ app = FastAPI(
     title="LifeLink API",
     description="Blood Donation and Emergency Blood Matching System",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+allow_origins=[
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -294,3 +306,38 @@ def get_hospitals():
         del hospital["_id"]
 
     return hospitals
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.post("/login")
+def login_user(credentials: LoginRequest):
+
+    # Find user by email
+    user = users_collection.find_one({
+        "email": credentials.email
+    })
+
+    # User does not exist
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    # Check password
+    if user.get("password_hash") != credentials.password:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    return {
+        "message": "Login successful",
+        "user_id": str(user["_id"]),
+        "name": user["name"],
+        "email": user["email"],
+        "role": user["role"]
+    }
