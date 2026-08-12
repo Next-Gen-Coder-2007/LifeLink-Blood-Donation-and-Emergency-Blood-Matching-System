@@ -73,3 +73,20 @@ class HospitalResponse(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+    
+    
+# ==========================================
+# BLOOD INVENTORY
+# ==========================================
+
+class BloodInventoryUpdate(BaseModel):
+    blood_group: str
+    units: int
+
+
+class BloodInventoryResponse(BaseModel):
+    id: str
+    hospital_id: str
+    blood_group: str
+    units: int
+    updated_at: str
