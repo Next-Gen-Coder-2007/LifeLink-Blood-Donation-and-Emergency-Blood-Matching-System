@@ -26,8 +26,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
 allow_origins=[
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -340,4 +340,135 @@ def login_user(credentials: LoginRequest):
         "name": user["name"],
         "email": user["email"],
         "role": user["role"]
+    }
+    
+# ============================================================
+# DELETE USER
+# ============================================================
+
+# ============================================================
+# DELETE USER + CASCADE DELETE
+# ============================================================
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: str):
+
+    from bson import ObjectId
+
+    # Convert string ID to MongoDB ObjectId
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid user ID"
+        )
+
+    # Check whether user exists
+    user = users_collection.find_one({
+        "_id": user_object_id
+    })
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # --------------------------------------------------------
+    # DELETE RELATED DONOR PROFILE
+    # --------------------------------------------------------
+
+    donor_result = donors_collection.delete_one({
+        "user_id": user_object_id
+    })
+
+    # --------------------------------------------------------
+    # DELETE RELATED HOSPITAL PROFILE
+    # --------------------------------------------------------
+
+    hospital_result = hospitals_collection.delete_one({
+        "user_id": user_object_id
+    })
+
+    # --------------------------------------------------------
+    # DELETE USER
+    # --------------------------------------------------------
+
+    user_result = users_collection.delete_one({
+        "_id": user_object_id
+    })
+
+    if user_result.deleted_count == 0:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete user"
+        )
+
+    return {
+        "message": "User and related profiles deleted successfully",
+        "user_id": user_id,
+        "donor_deleted": donor_result.deleted_count > 0,
+        "hospital_deleted": hospital_result.deleted_count > 0
+    }
+    
+# ============================================================
+# DELETE DONOR
+# ============================================================
+
+@app.delete("/donors/{donor_id}")
+def delete_donor(donor_id: str):
+
+    try:
+        donor_object_id = ObjectId(donor_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid donor ID"
+        )
+
+    result = donors_collection.delete_one({
+        "_id": donor_object_id
+    })
+
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Donor not found"
+        )
+
+    return {
+        "message": "Donor deleted successfully",
+        "donor_id": donor_id
+    }
+
+
+# ============================================================
+# DELETE HOSPITAL
+# ============================================================
+
+@app.delete("/hospitals/{hospital_id}")
+def delete_hospital(hospital_id: str):
+
+    try:
+        hospital_object_id = ObjectId(hospital_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid hospital ID"
+        )
+
+    result = hospitals_collection.delete_one({
+        "_id": hospital_object_id
+    })
+
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Hospital not found"
+        )
+
+    return {
+        "message": "Hospital deleted successfully",
+        "hospital_id": hospital_id
     }
