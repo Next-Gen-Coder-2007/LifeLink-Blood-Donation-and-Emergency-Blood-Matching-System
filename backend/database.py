@@ -23,6 +23,7 @@ db = client["lifelink"]
 users_collection = db["users"]
 donors_collection = db["donors"]
 hospitals_collection = db["hospitals"]
+blood_inventory_collection = db["blood_inventory"]
 
 
 # Unique indexes

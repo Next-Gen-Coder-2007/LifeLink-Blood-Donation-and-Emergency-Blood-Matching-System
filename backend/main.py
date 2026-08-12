@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from bson import ObjectId
 from fastapi import FastAPI, HTTPException
 from pymongo.errors import DuplicateKeyError
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,14 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import (
     users_collection,
     donors_collection,
-    hospitals_collection
+    hospitals_collection,
+    blood_inventory_collection
 )
 
 from models import (
     UserCreate,
     DonorCreate,
     HospitalCreate,
-    LoginRequest
+    LoginRequest,
+    BloodInventoryUpdate
 )
 
 
@@ -471,4 +474,127 @@ def delete_hospital(hospital_id: str):
     return {
         "message": "Hospital deleted successfully",
         "hospital_id": hospital_id
+    }
+    
+@app.get("/hospitals/{hospital_id}/blood-bank")
+def get_blood_bank(hospital_id: str):
+
+    try:
+        hospital_object_id = ObjectId(hospital_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid hospital ID"
+        )
+
+    # Check hospital exists
+    hospital = hospitals_collection.find_one({
+        "_id": hospital_object_id
+    })
+
+    if not hospital:
+        raise HTTPException(
+            status_code=404,
+            detail="Hospital not found"
+        )
+
+    # Get blood inventory belonging to this hospital
+    inventory = list(
+        blood_inventory_collection.find({
+            "hospital_id": hospital_object_id
+        })
+    )
+
+    blood_groups = [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+    ]
+
+    inventory_map = {
+        item["blood_group"]: item["units"]
+        for item in inventory
+    }
+
+    return [
+        {
+            "blood_group": group,
+            "units": inventory_map.get(group, 0)
+        }
+        for group in blood_groups
+    ]
+    
+@app.put("/hospitals/{hospital_id}/blood-bank")
+def update_blood_bank(
+    hospital_id: str,
+    inventory: BloodInventoryUpdate
+):
+
+    try:
+        hospital_object_id = ObjectId(hospital_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid hospital ID"
+        )
+
+    # Check hospital exists
+    hospital = hospitals_collection.find_one({
+        "_id": hospital_object_id
+    })
+
+    if not hospital:
+        raise HTTPException(
+            status_code=404,
+            detail="Hospital not found"
+        )
+
+    # Validate blood group
+    valid_groups = {
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+    }
+
+    if inventory.blood_group not in valid_groups:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid blood group"
+        )
+
+    # Validate units
+    if inventory.units < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Units cannot be negative"
+        )
+
+    blood_inventory_collection.update_one(
+        {
+            "hospital_id": hospital_object_id,
+            "blood_group": inventory.blood_group
+        },
+        {
+            "$set": {
+                "units": inventory.units,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        },
+        upsert=True
+    )
+
+    return {
+        "message": "Blood inventory updated successfully",
+        "blood_group": inventory.blood_group,
+        "units": inventory.units
     }
