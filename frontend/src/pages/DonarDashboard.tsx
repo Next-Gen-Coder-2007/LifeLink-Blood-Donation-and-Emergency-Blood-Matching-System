@@ -14,11 +14,47 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/Button";
 import { useToast } from "@/context/ToastContext";
+
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+// ============================================================
+// TYPES
+// ============================================================
+
+interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface Session {
+  user?: SessionUser;
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+}
+
+interface Donor {
+  id: string;
+  user_id: string;
+  blood_group: string;
+  phone: string;
+  latitude: number;
+  longitude: number;
+  availability: boolean;
+  last_donation_date?: string | null;
+}
+
+// ============================================================
+// COMPONENT
+// ============================================================
 
 export function DonorDashboardPage() {
   const navigate = useNavigate();
@@ -26,11 +62,11 @@ export function DonorDashboardPage() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ============================================================
-  // GET SESSION
-  // ============================================================
+  // ==========================================================
+  // SESSION
+  // ==========================================================
 
-  const getSession = () => {
+  const getSession = (): Session | null => {
     try {
       const stored =
         localStorage.getItem("user") ||
@@ -44,38 +80,105 @@ export function DonorDashboardPage() {
 
   const session = getSession();
 
-  // ============================================================
-  // USER DATA
-  // ============================================================
+  const sessionUser = session?.user;
+
+  const userId =
+    sessionUser?.id ||
+    session?.id ||
+    "";
 
   const userName =
-    session?.user?.name ||
+    sessionUser?.name ||
     session?.name ||
-    "Naveen";
+    "User";
 
   const userEmail =
-    session?.user?.email ||
+    sessionUser?.email ||
     session?.email ||
-    "user@lifelink.com";
+    "";
+
+  // ==========================================================
+  // DONOR DATA
+  // ==========================================================
+
+  const [donor, setDonor] = useState<Donor | null>(null);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  // ==========================================================
+  // FETCH DONOR DATA
+  // ==========================================================
+
+  const fetchDonorData = async () => {
+    if (!userId) {
+      setError("User session not found.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_BASE_URL}/donors`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch donors: ${response.status}`
+        );
+      }
+
+      const donors: Donor[] = await response.json();
+
+      // Find donor belonging to logged-in user
+      const currentDonor = donors.find(
+        (item) => String(item.user_id) === String(userId)
+      );
+
+      if (!currentDonor) {
+        throw new Error(
+          "Donor profile was not found."
+        );
+      }
+
+      setDonor(currentDonor);
+    } catch (err) {
+      console.error("Donor dashboard error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load donor information."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDonorData();
+  }, [userId]);
+
+  // ==========================================================
+  // DONOR VALUES
+  // ==========================================================
 
   const bloodGroup =
-    session?.user?.blood_group ||
-    session?.blood_group ||
-    "B+";
+    donor?.blood_group || "--";
 
   const availability =
-    session?.user?.availability ??
-    session?.availability ??
-    true;
+    donor?.availability ?? false;
 
   const lastDonation =
-    session?.user?.last_donation_date ||
-    session?.last_donation_date ||
-    null;
+    donor?.last_donation_date || null;
 
-  // ============================================================
+  // ==========================================================
   // INITIALS
-  // ============================================================
+  // ==========================================================
 
   const initials = userName
     .split(" ")
@@ -85,9 +188,9 @@ export function DonorDashboardPage() {
     .join("")
     .toUpperCase();
 
-  // ============================================================
+  // ==========================================================
   // LOGOUT
-  // ============================================================
+  // ==========================================================
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -103,9 +206,9 @@ export function DonorDashboardPage() {
     });
   };
 
-  // ============================================================
-  // RESPOND TO REQUEST
-  // ============================================================
+  // ==========================================================
+  // RESPOND
+  // ==========================================================
 
   const handleRespond = () => {
     showToast(
@@ -114,11 +217,13 @@ export function DonorDashboardPage() {
     );
   };
 
-  // ============================================================
-  // FORMAT DATE
-  // ============================================================
+  // ==========================================================
+  // DATE FORMAT
+  // ==========================================================
 
-  const formatDate = (value: string | null) => {
+  const formatDate = (
+    value: string | null | undefined
+  ) => {
     if (!value) {
       return "No donation recorded";
     }
@@ -129,12 +234,41 @@ export function DonorDashboardPage() {
       return value;
     }
 
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
+
+  // ==========================================================
+  // LOADING
+  // ==========================================================
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+
+        <div className="text-center">
+
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-line border-t-primary" />
+
+          <p className="mt-4 text-sm text-muted">
+            Loading your donor dashboard...
+          </p>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  // ==========================================================
+  // RETURN
+  // ==========================================================
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,11 +281,7 @@ export function DonorDashboardPage() {
 
         <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
 
-          {/* Logo */}
-
           <Logo to="/dashboard" />
-
-          {/* Desktop user section */}
 
           <div className="flex items-center gap-4">
 
@@ -162,6 +292,7 @@ export function DonorDashboardPage() {
               </div>
 
               <div>
+
                 <p className="text-sm font-semibold text-foreground">
                   {userName}
                 </p>
@@ -169,6 +300,7 @@ export function DonorDashboardPage() {
                 <p className="text-xs text-muted">
                   Donor
                 </p>
+
               </div>
 
             </div>
@@ -179,17 +311,18 @@ export function DonorDashboardPage() {
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
+
               <span className="hidden sm:inline">
                 Logout
               </span>
             </Button>
 
-            {/* Mobile menu button */}
-
             <button
               type="button"
               onClick={() =>
-                setMobileMenuOpen(!mobileMenuOpen)
+                setMobileMenuOpen(
+                  !mobileMenuOpen
+                )
               }
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-line lg:hidden"
               aria-label="Toggle navigation"
@@ -218,7 +351,9 @@ export function DonorDashboardPage() {
 
             <Link
               to="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl bg-primary-soft px-4 py-3 text-sm font-semibold text-primary"
             >
               <HeartPulse className="h-5 w-5" />
@@ -226,8 +361,10 @@ export function DonorDashboardPage() {
             </Link>
 
             <Link
-              to="/dashboard/profile"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/donor/profile"
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground"
             >
               <UserRound className="h-5 w-5" />
@@ -235,8 +372,10 @@ export function DonorDashboardPage() {
             </Link>
 
             <Link
-              to="/dashboard/requests"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/donor/requests"
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground"
             >
               <Droplet className="h-5 w-5" />
@@ -244,8 +383,10 @@ export function DonorDashboardPage() {
             </Link>
 
             <Link
-              to="/dashboard/notifications"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/donor/notifications"
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground"
             >
               <Bell className="h-5 w-5" />
@@ -253,8 +394,10 @@ export function DonorDashboardPage() {
             </Link>
 
             <Link
-              to="/dashboard/history"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/donor/history"
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground"
             >
               <History className="h-5 w-5" />
@@ -262,8 +405,10 @@ export function DonorDashboardPage() {
             </Link>
 
             <Link
-              to="/dashboard/settings"
-              onClick={() => setMobileMenuOpen(false)}
+              to="/donor/settings"
+              onClick={() =>
+                setMobileMenuOpen(false)
+              }
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-background hover:text-foreground"
             >
               <Settings className="h-5 w-5" />
@@ -276,87 +421,70 @@ export function DonorDashboardPage() {
       )}
 
       {/* ======================================================
-          MAIN APPLICATION LAYOUT
-          IMPORTANT: NO mx-auto / max-w HERE
+          MAIN APPLICATION
       ====================================================== */}
 
       <div className="flex min-h-[calc(100vh-4rem)]">
 
         {/* ====================================================
-            LEFT SIDEBAR
+            SIDEBAR
         ==================================================== */}
 
         <aside className="hidden w-64 shrink-0 border-r border-line bg-white lg:block">
 
           <div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col p-5">
 
-            {/* Navigation */}
-
             <nav className="space-y-1">
 
-              {/* Dashboard */}
-
               <Link
-                to="/dashboard"
+                to="/donor/dashboard"
                 className="flex items-center gap-3 rounded-xl bg-primary-soft px-4 py-3 text-sm font-semibold text-primary"
               >
                 <HeartPulse className="h-5 w-5" />
-                <span>Dashboard</span>
+                Dashboard
               </Link>
 
-              {/* My Profile */}
-
               <Link
-                to="/dashboard/profile"
+                to="/donor/profile"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-background hover:text-foreground"
               >
                 <UserRound className="h-5 w-5" />
-                <span>My Profile</span>
+                My Profile
               </Link>
 
-              {/* Blood Requests */}
-
               <Link
-                to="/dashboard/requests"
+                to="/donor/requests"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-background hover:text-foreground"
               >
                 <Droplet className="h-5 w-5" />
-                <span>Blood Requests</span>
+                Blood Requests
               </Link>
 
-              {/* Notifications */}
-
               <Link
-                to="/dashboard/notifications"
+                to="/donor/notifications"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-background hover:text-foreground"
               >
                 <Bell className="h-5 w-5" />
-                <span>Notifications</span>
+                Notifications
               </Link>
 
-              {/* Donation History */}
-
               <Link
-                to="/dashboard/history"
+                to="/donor/history"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-background hover:text-foreground"
               >
                 <History className="h-5 w-5" />
-                <span>Donation History</span>
+                Donation History
               </Link>
 
-              {/* Settings */}
-
               <Link
-                to="/dashboard/settings"
+                to="/donor/settings"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted transition hover:bg-background hover:text-foreground"
               >
                 <Settings className="h-5 w-5" />
-                <span>Settings</span>
+                Settings
               </Link>
 
             </nav>
-
-            {/* Sidebar bottom card */}
 
             <div className="mt-auto rounded-2xl bg-gradient-to-br from-primary-soft to-secondary-soft p-5">
 
@@ -379,7 +507,7 @@ export function DonorDashboardPage() {
         </aside>
 
         {/* ====================================================
-            RIGHT CONTENT
+            CONTENT
         ==================================================== */}
 
         <main className="min-w-0 flex-1 overflow-x-hidden">
@@ -387,7 +515,7 @@ export function DonorDashboardPage() {
           <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-12">
 
             {/* =================================================
-                PAGE HEADER
+                HEADER
             ================================================= */}
 
             <section>
@@ -406,6 +534,16 @@ export function DonorDashboardPage() {
               </p>
 
             </section>
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
             {/* =================================================
                 STAT CARDS
@@ -524,13 +662,13 @@ export function DonorDashboardPage() {
             </section>
 
             {/* =================================================
-                TWO COLUMN CONTENT
+                TWO COLUMN
             ================================================= */}
 
             <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
 
               {/* =================================================
-                  NEARBY REQUESTS
+                  BLOOD REQUESTS
               ================================================= */}
 
               <div className="rounded-2xl border border-line bg-white shadow-card">
@@ -560,7 +698,7 @@ export function DonorDashboardPage() {
 
                 <div className="p-6">
 
-                  {/* Emergency request */}
+                  {/* TEMPORARY REQUEST */}
 
                   <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
 
@@ -594,68 +732,18 @@ export function DonorDashboardPage() {
 
                       </div>
 
-                      <span className="text-xs text-muted">
-                        5 min ago
-                      </span>
+                    </div>
+
+                    <div className="mt-5 rounded-xl bg-white p-4">
+
+                      <p className="text-sm text-muted">
+                        Blood requests will appear here when a
+                        matching hospital request endpoint is
+                        available.
+                      </p>
 
                     </div>
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
-
-                      <div className="rounded-xl bg-white p-4">
-
-                        <p className="text-[11px] text-muted">
-                          Hospital
-                        </p>
-
-                        <p className="mt-1 text-sm font-semibold text-foreground">
-                          Apollo Hospital
-                        </p>
-
-                      </div>
-
-                      <div className="rounded-xl bg-white p-4">
-
-                        <p className="text-[11px] text-muted">
-                          Distance
-                        </p>
-
-                        <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-foreground">
-                          <MapPin className="h-3.5 w-3.5 text-primary" />
-                          3.2 km
-                        </p>
-
-                      </div>
-
-                      <div className="rounded-xl bg-white p-4">
-
-                        <p className="text-[11px] text-muted">
-                          Required
-                        </p>
-
-                        <p className="mt-1 text-sm font-semibold text-foreground">
-                          2 units
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    <div className="mt-5 flex justify-end">
-
-                      <Button onClick={handleRespond}>
-                        <Droplet className="h-4 w-4" />
-                        Respond
-                      </Button>
-
-                    </div>
-
-                  </div>
-
-                  {/* Empty state */}
-
-                  <div className="mt-4 flex items-center justify-center rounded-xl border border-dashed border-line p-4 text-xs text-muted">
-                    More nearby requests will appear here.
                   </div>
 
                 </div>
@@ -708,23 +796,47 @@ export function DonorDashboardPage() {
 
                   </div>
 
-                  {/* Current status */}
+                  {/* Status */}
 
-                  <div className="rounded-2xl bg-emerald-50 p-4">
+                  <div
+                    className={`rounded-2xl p-4 ${
+                      availability
+                        ? "bg-emerald-50"
+                        : "bg-red-50"
+                    }`}
+                  >
 
                     <div className="flex items-center gap-3">
 
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white ${
+                          availability
+                            ? "text-emerald-600"
+                            : "text-red-600"
+                        }`}
+                      >
                         <CheckCircle2 className="h-5 w-5" />
                       </div>
 
                       <div>
 
-                        <p className="text-xs text-emerald-700">
+                        <p
+                          className={`text-xs ${
+                            availability
+                              ? "text-emerald-700"
+                              : "text-red-700"
+                          }`}
+                        >
                           Current Status
                         </p>
 
-                        <p className="mt-1 text-sm font-semibold text-emerald-800">
+                        <p
+                          className={`mt-1 text-sm font-semibold ${
+                            availability
+                              ? "text-emerald-800"
+                              : "text-red-800"
+                          }`}
+                        >
                           {availability
                             ? "Available to donate"
                             : "Currently unavailable"}
@@ -741,17 +853,15 @@ export function DonorDashboardPage() {
                   <div className="rounded-2xl border border-line p-4">
 
                     <p className="text-xs font-semibold text-muted">
-                      Next eligible donation
+                      Donor Information
                     </p>
 
                     <p className="mt-2 text-sm font-bold text-foreground">
-                      Check eligibility
+                      {donor?.phone || "Phone not available"}
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      Eligibility should be confirmed according
-                      to your donation history and applicable
-                      donation guidelines.
+                      Your registered donor contact information.
                     </p>
 
                   </div>

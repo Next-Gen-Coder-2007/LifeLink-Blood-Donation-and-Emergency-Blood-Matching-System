@@ -8,7 +8,8 @@ from database import (
     users_collection,
     donors_collection,
     hospitals_collection,
-    blood_inventory_collection
+    blood_inventory_collection,
+    blood_requests_collection
 )
 
 from models import (
@@ -16,7 +17,11 @@ from models import (
     DonorCreate,
     HospitalCreate,
     LoginRequest,
-    BloodInventoryUpdate
+    BloodInventoryUpdate,
+    BloodRequestCreate,
+    BloodRequestResponse,
+    BloodRequestUpdate,
+    DonorBloodRequestResponse
 )
 
 
@@ -597,4 +602,477 @@ def update_blood_bank(
         "message": "Blood inventory updated successfully",
         "blood_group": inventory.blood_group,
         "units": inventory.units
+    }
+    
+    
+@app.post("/blood-requests", response_model=BloodRequestResponse)
+def create_blood_request(
+    request: BloodRequestCreate
+):
+    valid_blood_groups = [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-",
+    ]
+
+    if request.blood_group not in valid_blood_groups:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid blood group"
+        )
+
+    if request.units_required <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Units required must be greater than 0"
+        )
+
+    valid_urgencies = [
+        "normal",
+        "urgent",
+        "emergency",
+    ]
+
+    urgency = request.urgency.lower()
+
+    if urgency not in valid_urgencies:
+        raise HTTPException(
+            status_code=400,
+            detail="Urgency must be normal, urgent, or emergency"
+        )
+
+    # Check hospital exists
+    if not ObjectId.is_valid(request.hospital_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid hospital ID"
+        )
+
+    hospital = hospitals_collection.find_one({
+        "_id": ObjectId(request.hospital_id)
+    })
+
+    if not hospital:
+        raise HTTPException(
+            status_code=404,
+            detail="Hospital not found"
+        )
+
+    now = datetime.utcnow()
+
+    blood_request = {
+        "hospital_id": request.hospital_id,
+        "blood_group": request.blood_group,
+        "units_required": request.units_required,
+        "urgency": urgency,
+        "patient_name": request.patient_name,
+        "required_by": request.required_by,
+        "status": "searching",
+        "created_at": now.isoformat(),
+    }
+
+    result = blood_requests_collection.insert_one(
+        blood_request
+    )
+
+    return {
+        "id": str(result.inserted_id),
+        "hospital_id": request.hospital_id,
+        "blood_group": request.blood_group,
+        "units_required": request.units_required,
+        "urgency": urgency,
+        "patient_name": request.patient_name,
+        "required_by": request.required_by,
+        "status": "searching",
+        "created_at": now.isoformat(),
+    }
+    
+
+
+@app.get(
+    "/blood-requests/hospital/{hospital_id}",
+    response_model=list[BloodRequestResponse]
+)
+def get_hospital_blood_requests(
+    hospital_id: str
+):
+    if not ObjectId.is_valid(hospital_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid hospital ID"
+        )
+
+    hospital = hospitals_collection.find_one({
+        "_id": ObjectId(hospital_id)
+    })
+
+    if not hospital:
+        raise HTTPException(
+            status_code=404,
+            detail="Hospital not found"
+        )
+
+    requests = blood_requests_collection.find(
+        {
+            "hospital_id": hospital_id
+        }
+    ).sort(
+        "created_at",
+        -1
+    )
+
+    response = []
+
+    for item in requests:
+        response.append({
+            "id": str(item["_id"]),
+            "hospital_id": item["hospital_id"],
+            "blood_group": item["blood_group"],
+            "units_required": item["units_required"],
+            "urgency": item["urgency"],
+            "patient_name": item.get("patient_name"),
+            "required_by": item.get("required_by"),
+            "status": item["status"],
+            "created_at": item["created_at"],
+        })
+
+    return response
+
+
+@app.get(
+    "/blood-requests/{request_id}",
+    response_model=BloodRequestResponse
+)
+def get_blood_request(
+    request_id: str
+):
+    if not ObjectId.is_valid(request_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid request ID"
+        )
+
+    item = blood_requests_collection.find_one({
+        "_id": ObjectId(request_id)
+    })
+
+    if not item:
+        raise HTTPException(
+            status_code=404,
+            detail="Blood request not found"
+        )
+
+    return {
+        "id": str(item["_id"]),
+        "hospital_id": item["hospital_id"],
+        "blood_group": item["blood_group"],
+        "units_required": item["units_required"],
+        "urgency": item["urgency"],
+        "patient_name": item.get("patient_name"),
+        "required_by": item.get("required_by"),
+        "status": item["status"],
+        "created_at": item["created_at"],
+    }
+
+@app.get(
+    "/blood-requests/donor/{donor_id}",
+    response_model=list[DonorBloodRequestResponse]
+)
+def get_donor_blood_requests(donor_id: str):
+
+    if not ObjectId.is_valid(donor_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid donor ID"
+        )
+
+    # Find donor
+    donor = donors_collection.find_one({
+        "_id": ObjectId(donor_id)
+    })
+
+    if not donor:
+        raise HTTPException(
+            status_code=404,
+            detail="Donor not found"
+        )
+
+    donor_blood_group = donor.get("blood_group")
+
+    if not donor_blood_group:
+        raise HTTPException(
+            status_code=400,
+            detail="Donor blood group not found"
+        )
+
+    print("DONOR ID:", donor_id)
+    print("DONOR BLOOD GROUP:", donor_blood_group)
+
+    # Find matching requests
+    requests = blood_requests_collection.find({
+        "blood_group": donor_blood_group
+    }).sort(
+        "created_at",
+        -1
+    )
+
+    response = []
+
+    for request in requests:
+
+        print(
+            "REQUEST:",
+            request.get("blood_group"),
+            request.get("status")
+        )
+
+        hospital_id = request.get(
+            "hospital_id"
+        )
+
+        if not hospital_id:
+            continue
+
+        if not ObjectId.is_valid(hospital_id):
+            continue
+
+        hospital = hospitals_collection.find_one({
+            "_id": ObjectId(hospital_id)
+        })
+
+        if not hospital:
+            continue
+
+        response.append({
+            "id": str(request["_id"]),
+
+            "hospital_id": str(
+                hospital["_id"]
+            ),
+            "hospital_name": hospital.get(
+                "hospital_name",
+                ""
+            ),
+            "hospital_phone": hospital.get(
+                "phone",
+                ""
+            ),
+            "emergency_contact": hospital.get(
+                "emergency_contact",
+                ""
+            ),
+            "hospital_address": hospital.get(
+                "address",
+                ""
+            ),
+            "hospital_latitude": hospital.get(
+                "latitude",
+                0
+            ),
+            "hospital_longitude": hospital.get(
+                "longitude",
+                0
+            ),
+
+            "blood_group": request.get(
+                "blood_group"
+            ),
+            "units_required": request.get(
+                "units_required",
+                0
+            ),
+            "urgency": request.get(
+                "urgency",
+                "normal"
+            ),
+            "patient_name": request.get(
+                "patient_name"
+            ),
+            "required_by": request.get(
+                "required_by"
+            ),
+            "status": request.get(
+                "status",
+                "searching"
+            ),
+            "created_at": request.get(
+                "created_at",
+                ""
+            )
+        })
+
+    print(
+        "MATCHING REQUESTS:",
+        len(response)
+    )
+
+    return response
+
+
+
+    
+@app.put(
+    "/blood-requests/{request_id}",
+    response_model=BloodRequestResponse
+)
+def update_blood_request(
+    request_id: str,
+    request: BloodRequestUpdate
+):
+    if not ObjectId.is_valid(request_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid request ID"
+        )
+
+    existing = blood_requests_collection.find_one({
+        "_id": ObjectId(request_id)
+    })
+
+    if not existing:
+        raise HTTPException(
+            status_code=404,
+            detail="Blood request not found"
+        )
+
+    update_data = {}
+
+    valid_blood_groups = [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-",
+    ]
+
+    if request.blood_group is not None:
+
+        if request.blood_group not in valid_blood_groups:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid blood group"
+            )
+
+        update_data["blood_group"] = (
+            request.blood_group
+        )
+
+    if request.units_required is not None:
+
+        if request.units_required <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Units required must be greater than 0"
+            )
+
+        update_data["units_required"] = (
+            request.units_required
+        )
+
+    if request.urgency is not None:
+
+        valid_urgencies = [
+            "normal",
+            "urgent",
+            "emergency",
+        ]
+
+        urgency = request.urgency.lower()
+
+        if urgency not in valid_urgencies:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid urgency"
+            )
+
+        update_data["urgency"] = urgency
+
+    if request.patient_name is not None:
+        update_data["patient_name"] = (
+            request.patient_name
+        )
+
+    if request.required_by is not None:
+        update_data["required_by"] = (
+            request.required_by
+        )
+
+    if request.status is not None:
+
+        valid_statuses = [
+            "searching",
+            "fulfilled",
+            "cancelled",
+            "completed",
+        ]
+
+        if request.status not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid request status"
+            )
+
+        update_data["status"] = request.status
+
+    update_data["updated_at"] = (
+        datetime.utcnow().isoformat()
+    )
+
+    if update_data:
+        blood_requests_collection.update_one(
+            {
+                "_id": ObjectId(request_id)
+            },
+            {
+                "$set": update_data
+            }
+        )
+
+    updated = blood_requests_collection.find_one({
+        "_id": ObjectId(request_id)
+    })
+
+    return {
+        "id": str(updated["_id"]),
+        "hospital_id": updated["hospital_id"],
+        "blood_group": updated["blood_group"],
+        "units_required": updated["units_required"],
+        "urgency": updated["urgency"],
+        "patient_name": updated.get("patient_name"),
+        "required_by": updated.get("required_by"),
+        "status": updated["status"],
+        "created_at": updated["created_at"],
+    }
+    
+@app.delete("/blood-requests/{request_id}")
+def delete_blood_request(
+    request_id: str
+):
+    if not ObjectId.is_valid(request_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid request ID"
+        )
+
+    result = blood_requests_collection.delete_one({
+        "_id": ObjectId(request_id)
+    })
+
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Blood request not found"
+        )
+
+    return {
+        "message": "Blood request deleted successfully",
+        "id": request_id
     }

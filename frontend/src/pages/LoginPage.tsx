@@ -38,10 +38,9 @@ export function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [submitting, setSubmitting] = useState(false);
-
   const targetPath =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
-    "/dashboard";
+    null;
 
   const validate = (): LoginErrors => {
     const next: LoginErrors = {};
@@ -101,12 +100,23 @@ export function LoginPage() {
 
       // Dispatch event to refresh state listeners
       window.dispatchEvent(new Event("storage"));
-
       const firstName = sessionData.user.name.split(" ")[0];
+
       showToast(`Welcome back, ${firstName}!`);
 
-      // Navigate to dashboard
-      navigate(targetPath, { replace: true });
+      // ==========================================
+      // REDIRECT BASED ON USER ROLE
+      // ==========================================
+
+      const role = sessionData.user.role.toLowerCase();
+
+      if (role === "donor") {
+        navigate("/donor/dashboard", { replace: true });
+      } else if (role === "hospital") {
+        navigate("/hospital/dashboard", { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } 
     } catch (error) {
       console.error(error);
       showToast(
