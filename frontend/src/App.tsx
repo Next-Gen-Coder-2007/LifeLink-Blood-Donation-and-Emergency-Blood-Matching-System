@@ -10,13 +10,15 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterSelectionPage } from "@/pages/RegisterSelectionPage";
 import { DonorRegisterPage } from "@/pages/DonorRegisterPage";
 import { HospitalRegisterPage } from "@/pages/HospitalRegisterPage";
-import { DashboardPage } from "@/pages/DashboardPage";
+
+import { DonorDashboardPage } from "@/pages/DonarDashboard";
 
 import { AdminLoginPage } from "@/pages/AdminLoginPage";
 import { Admin } from "@/pages/Admin";
 import { AdminManagementPage } from "@/pages/AdminManagementPage";
 
 import { NotFoundPage } from "@/pages/NotFoundPage";
+
 
 export default function App() {
   return (
@@ -62,17 +64,6 @@ export default function App() {
           element={<HospitalRegisterPage />}
         />
 
-        {/* ================= USER DASHBOARD ================= */}
-
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
         {/* ================= ADMIN ================= */}
 
         <Route
@@ -108,6 +99,13 @@ export default function App() {
           path="*"
           element={<NotFoundPage />}
         />
+
+
+        <Route
+          path="/donor/dashboard"
+          element={<DonorDashboardPage />}
+        />
+        
 
       </Routes>
     </>
