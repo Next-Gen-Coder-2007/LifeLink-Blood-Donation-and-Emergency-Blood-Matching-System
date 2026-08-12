@@ -19,6 +19,19 @@ import { AdminManagementPage } from "@/pages/AdminManagementPage";
 
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
+import { DonorProfilePage } from "@/pages/DonorProfilePage";
+import { BloodRequestsPage } from "@/pages/BloodRequestsPage";
+import { NotificationsPage } from "@/pages/NotificationsPage";
+import { DonationHistoryPage } from "@/pages/DonationHistoryPage";
+import { DonorSettingsPage } from "@/pages/DonorSettingsPage";
+import { HospitalDashboard } from "@/pages/HospitalDashboard";
+
+import { HospitalBloodBank } from "@/pages/HospitalBloodBank";
+import { HospitalBloodRequests } from "@/pages/HospitalBloodRequests";
+
+import { DonorBloodRequests } from "@/pages/DonorBloodRequests";
+
+
 
 export default function App() {
   return (
@@ -105,7 +118,47 @@ export default function App() {
           path="/donor/dashboard"
           element={<DonorDashboardPage />}
         />
-        
+
+         <Route
+          path="/donor/profile"
+          element={<DonorProfilePage />}
+        />
+
+        <Route
+          path="/donor/notifications"
+          element={<NotificationsPage />}
+        />
+
+        <Route
+          path="/donor/history"
+          element={<DonationHistoryPage />}
+        />
+
+        <Route
+          path="/donor/settings"
+          element={<DonorSettingsPage />}
+        />
+
+
+        <Route
+          path="/hospital/dashboard"
+          element={<HospitalDashboard />}
+        />
+
+
+        <Route
+          path="/hospital/blood-bank"
+          element={<HospitalBloodBank />}
+        />
+
+        <Route
+            path="/hospital/requests"
+            element={<HospitalBloodRequests />}
+          />
+        <Route
+            path="/donor/requests"
+            element={<DonorBloodRequests />}
+          />
 
       </Routes>
     </>

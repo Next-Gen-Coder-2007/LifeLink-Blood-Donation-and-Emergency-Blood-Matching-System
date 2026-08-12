@@ -24,6 +24,8 @@ users_collection = db["users"]
 donors_collection = db["donors"]
 hospitals_collection = db["hospitals"]
 blood_inventory_collection = db["blood_inventory"]
+blood_requests_collection = db["blood_requests"]
+notifications_collection = db["notifications"]
 
 
 # Unique indexes
