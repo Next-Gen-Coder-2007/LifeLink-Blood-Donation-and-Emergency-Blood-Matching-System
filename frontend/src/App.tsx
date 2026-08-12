@@ -132,7 +132,7 @@ export default function App() {
         <Route
           path="/donor/history"
           element={<DonationHistoryPage />}
-        />
+        />  
 
         <Route
           path="/donor/settings"
