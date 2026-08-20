@@ -78,7 +78,7 @@
 graph TB
     subgraph Client_Layer["Presentation Tier (Client Web App & Native Mobile App)"]
         UI_Landing["Landing Page & Hero Portal"]
-        UI_Auth["Auth Portal (Login / Register Selection)"]
+        UI_Auth["Auth Portal (Login / Register Modals)"]
         UI_Donor["Donor Dashboard & Match Radar"]
         UI_Hospital["Hospital Dashboard & Blood Bank"]
         UI_Admin["Admin Oversight & Governance Center"]
@@ -93,26 +93,27 @@ graph TB
     end
 
     subgraph Controller_Layer["Application Tier (Controllers & Services)"]
-        Ctrl_Auth["Auth Controller<br/>(Login & Session)"]
-        Ctrl_User["User Controller<br/>(Cascade Management)"]
-        Ctrl_Donor["Donor Controller<br/>(Profile & Geolocation)"]
-        Ctrl_Hospital["Hospital Controller<br/>(Profile & Directory)"]
-        Ctrl_BloodBank["Blood Bank Controller<br/>(8-Group Matrix)"]
-        Ctrl_Request["Blood Request Controller<br/>(Emergency Triage)"]
-        Ctrl_Analytics["Analytics Controller<br/>(Platform Metrics)"]
+        Ctrl_Auth["Auth Controller (Login & Session)"]
+        Ctrl_User["User Controller (Cascade Management)"]
+        Ctrl_Donor["Donor Controller (Profile & Geolocation)"]
+        Ctrl_Hospital["Hospital Controller (Profile & Directory)"]
+        Ctrl_BloodBank["Blood Bank Controller (8-Group Matrix)"]
+        Ctrl_Request["Blood Request Controller (Emergency Triage)"]
+        Ctrl_Analytics["Analytics Controller (Platform Metrics)"]
     end
 
     subgraph Data_Layer["Data Tier (MongoDB & Mongoose ODM)"]
-        Col_Users[("users Collection<br/>Unique Email Index")]
-        Col_Donors[("donors Collection<br/>Compound [blood_group, availability]")]
-        Col_Hospitals[("hospitals Collection<br/>Unique Phone Index")]
-        Col_Inventory[("blood_inventory Collection<br/>Unique [hospital_id, blood_group]")]
-        Col_Requests[("blood_requests Collection<br/>Index [hospital_id, created_at]")]
-        Col_Notifications[("notifications Collection<br/>Index [recipient_id, created_at]")]
+        Col_Users[("users Collection - Unique Email Index")]
+        Col_Donors[("donors Collection - Compound Index")]
+        Col_Hospitals[("hospitals Collection - Unique Phone Index")]
+        Col_Inventory[("blood_inventory Collection - Compound Unique Index")]
+        Col_Requests[("blood_requests Collection - Index [hospital_id, created_at]")]
+        Col_Notifications[("notifications Collection - Index [recipient_id, created_at]")]
     end
 
-    UI_Landing & UI_Auth & UI_Donor & UI_Hospital & UI_Admin & UI_Mobile -->|HTTP/REST (JSON)| MW_Helmet
-    MW_Helmet --> MW_CORS --> MW_Parser
+    UI_Landing & UI_Auth & UI_Donor & UI_Hospital & UI_Admin & UI_Mobile -->|HTTP/REST| MW_Helmet
+    MW_Helmet --> MW_CORS
+    MW_CORS --> MW_Parser
 
     MW_Parser --> Ctrl_Auth & Ctrl_User & Ctrl_Donor & Ctrl_Hospital & Ctrl_BloodBank & Ctrl_Request & Ctrl_Analytics
 
@@ -134,30 +135,30 @@ graph TB
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as Client App (React / Mobile App / Fetch)
+    actor Client as Client App (React / Mobile App)
     participant MW as Express Middleware (CORS / Helmet)
-    participant Router as API Router (/api/v1 & Root)
+    participant Router as API Router (/api/v1)
     participant Controller as Domain Controller
     participant Model as Mongoose ODM
     participant DB as MongoDB Database
     participant ErrorMW as Global Error Handler
 
     Client->>MW: HTTP Request (Method, URL, Headers, Body)
-    MW->>MW: Apply Helmet security headers & verify CORS origin
-    MW->>MW: Parse JSON body payload
-    MW->>Router: Route dispatch (/blood-requests, /users, etc.)
-    Router->>Controller: Invoke controller action
-    Controller->>Controller: Validate payload & business constraints
+    MW->>MW: Apply Security Headers and Verify CORS Origin
+    MW->>MW: Parse JSON Body Payload
+    MW->>Router: Route Dispatch (/blood-requests, /users)
+    Router->>Controller: Invoke Controller Action
+    Controller->>Controller: Validate Payload and Constraints
 
-    alt Validation Failure or Bad Request
+    alt Validation Failure
         Controller-->>ErrorMW: next(new AppError(message, 400))
-        ErrorMW-->>Client: JSON { detail: "...", error: "ValidationError" } [400]
-    else Validation Passed
+        ErrorMW-->>Client: JSON Error Response (400 Bad Request)
+    else Validation Success
         Controller->>Model: Execute Query / Mutation
         Model->>DB: MongoDB Wire Protocol Command
-        DB-->>Model: Raw BSON Document / Acknowledgment
-        Model-->>Controller: Hydrated Model Instance / Object
-        Controller-->>Client: JSON Response + HTTP 200/201 Status
+        DB-->>Model: Raw BSON Document / Result
+        Model-->>Controller: Hydrated Model Instance
+        Controller-->>Client: JSON Response (200 / 201 Created)
     end
 ```
 
@@ -167,26 +168,26 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Start([Hospital Initiates Emergency Blood Request]) --> InputCheck{Validate Request Data}
-    InputCheck -->|Invalid Units or Missing Fields| ReturnErr[Return 400 Bad Request]
-    InputCheck -->|Valid| CheckHosp{Hospital Exists in DB?}
+    Start(["Hospital Initiates Emergency Blood Request"]) --> InputCheck{"Validate Request Data"}
+    InputCheck -->|"Invalid Data"| ReturnErr["Return 400 Bad Request"]
+    InputCheck -->|"Valid Data"| CheckHosp{"Hospital Exists in DB?"}
     
-    CheckHosp -->|No| ReturnNotFound[Return 404 Hospital Not Found]
-    CheckHosp -->|Yes| SaveReq[Save Request with Status = 'searching']
+    CheckHosp -->|"No"| ReturnNotFound["Return 404 Hospital Not Found"]
+    CheckHosp -->|"Yes"| SaveReq["Save Request with Status = 'searching'"]
     
-    SaveReq --> Broadcast[Trigger Donor Matching Engine]
-    Broadcast --> QueryDonors[Query Donors matching Blood Group & Availability = true]
+    SaveReq --> Broadcast["Trigger Donor Matching Engine"]
+    Broadcast --> QueryDonors["Query Donors matching Blood Group and Availability = true"]
     
-    QueryDonors --> FormatAlerts[Enrich Request with Hospital Contact, Address & Lat/Long]
-    FormatAlerts --> NotifyDonors[Dispatch to Active Donor Radar]
+    QueryDonors --> FormatAlerts["Enrich Request with Hospital Contact, Address and Coordinates"]
+    FormatAlerts --> NotifyDonors["Dispatch to Active Donor Radar"]
     
-    NotifyDonors --> DonorAction{Donor Responds to Request?}
-    DonorAction -->|Accept & Contact Hospital| Coordinate[Hospital & Donor Coordinate Fulfillment]
-    DonorAction -->|Pending / Waiting| KeepSearching[Status remains 'searching']
+    NotifyDonors --> DonorAction{"Donor Responds to Request?"}
+    DonorAction -->|"Accept and Contact"| Coordinate["Hospital and Donor Coordinate Fulfillment"]
+    DonorAction -->|"Pending / Waiting"| KeepSearching["Status remains 'searching'"]
     
-    Coordinate --> Fulfill[Hospital updates Status = 'fulfilled' / 'completed']
-    Fulfill --> UpdateStock[Hospital updates Blood Bank Stock (+Units)]
-    UpdateStock --> Done([Workflow Complete])
+    Coordinate --> Fulfill["Hospital updates Status to fulfilled or completed"]
+    Fulfill --> UpdateStock["Hospital updates Blood Bank Stock (+Units)"]
+    UpdateStock --> Done(["Workflow Complete"])
 ```
 
 ---
@@ -195,24 +196,24 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    AdminReq([Delete User Request]) --> ValidateUser{Check User ID}
-    ValidateUser -->|Invalid| Err400[Return 400 Invalid ID]
-    ValidateUser -->|Not Found| Err404[Return 404 User Not Found]
+    AdminReq(["Delete User Request"]) --> ValidateUser{"Check User ID"}
+    ValidateUser -->|"Invalid ID"| Err400["Return 400 Invalid ID"]
+    ValidateUser -->|"Not Found"| Err404["Return 404 User Not Found"]
     
-    ValidateUser -->|Valid| CascadeStart[Begin Cascade Cleanup]
+    ValidateUser -->|"Valid User"| CascadeStart["Begin Cascade Cleanup"]
     
-    CascadeStart --> DelDonor[Delete Donor Profile where user_id = User._id]
-    CascadeStart --> FindHosp{Hospital Profile Exists?}
+    CascadeStart --> DelDonor["Delete Donor Profile (user_id = User._id)"]
+    CascadeStart --> FindHosp{"Hospital Profile Exists?"}
     
-    FindHosp -->|Yes| DelStock[Delete all BloodInventory where hospital_id = Hosp._id]
-    DelStock --> DelReqs[Delete all BloodRequests where hospital_id = Hosp._id]
-    DelReqs --> DelHosp[Delete Hospital Profile]
+    FindHosp -->|"Yes"| DelStock["Delete all BloodInventory (hospital_id = Hosp._id)"]
+    DelStock --> DelReqs["Delete all BloodRequests (hospital_id = Hosp._id)"]
+    DelReqs --> DelHosp["Delete Hospital Profile"]
     
-    FindHosp -->|No| DelUserDoc[Delete User Document]
+    FindHosp -->|"No"| DelUserDoc["Delete User Document"]
     DelDonor --> DelUserDoc
     DelHosp --> DelUserDoc
     
-    DelUserDoc --> Complete([Return 200: Cascade Cleanup Successful])
+    DelUserDoc --> Complete(["Return 200: Cascade Cleanup Successful"])
 ```
 
 ---
@@ -225,46 +226,46 @@ The LifeLink system data model is engineered following formal Database Managemen
 
 ```mermaid
 erDiagram
-    USER ||--o| DONOR : "specializes into (role = 'donor')"
-    USER ||--o| HOSPITAL : "specializes into (role = 'hospital')"
-    HOSPITAL ||--o{ BLOOD_INVENTORY : "manages stock matrix (1:8 per group)"
-    HOSPITAL ||--o{ BLOOD_REQUEST : "broadcasts emergency needs (1:N)"
-    DONOR ||--o{ NOTIFICATION : "receives targeted alerts (1:N)"
-    HOSPITAL ||--o{ NOTIFICATION : "receives status dispatches (1:N)"
-    BLOOD_REQUEST ||--o{ NOTIFICATION : "triggers alert generation (1:N)"
+    USER ||--o| DONOR : "specializes into donor profile"
+    USER ||--o| HOSPITAL : "specializes into hospital profile"
+    HOSPITAL ||--o{ BLOOD_INVENTORY : "maintains stock matrix"
+    HOSPITAL ||--o{ BLOOD_REQUEST : "broadcasts emergency needs"
+    DONOR ||--o{ NOTIFICATION : "receives targeted alerts"
+    HOSPITAL ||--o{ NOTIFICATION : "receives status dispatches"
+    BLOOD_REQUEST ||--o{ NOTIFICATION : "triggers alert generation"
 
     USER {
-        ObjectId _id PK "Primary Key (Auto-generated 12-byte BSON ObjectId)"
-        string name "User full legal name (Mandatory, max 100 chars)"
-        string email UK "Unique lowercase user email address (Index: Unique B-Tree)"
-        string password_hash "Bcrypt salted password digest (Mandatory)"
-        string role "Role enum: 'donor' | 'hospital' | 'admin' (Domain constraint)"
-        date created_at "System generation timestamp (ISO-8601)"
-        date updated_at "System modification timestamp (ISO-8601)"
+        ObjectId _id PK "Primary Key (Auto-generated BSON ObjectId)"
+        string name "User full legal name"
+        string email UK "Unique lowercase user email address"
+        string password_hash "Bcrypt salted password digest"
+        string role "Role enum: donor | hospital | admin"
+        date created_at "System generation timestamp"
+        date updated_at "System modification timestamp"
     }
 
     DONOR {
         ObjectId _id PK "Primary Key (Auto-generated ObjectId)"
-        ObjectId user_id FK, UK "Foreign Key referencing users._id (1:1 Unique Constraint)"
-        string blood_group "ABO/Rh Blood Group: A+ | A- | B+ | B- | AB+ | AB- | O+ | O-"
-        string phone "Contact telephone number (Mandatory, E.164 compliant)"
-        float latitude "Geographical GPS Latitude (-90.0 to +90.0)"
-        float longitude "Geographical GPS Longitude (-180.0 to +180.0)"
-        boolean availability "Active donation readiness status flag (Default: true)"
-        string last_donation_date "Date of preceding successful donation (Nullable)"
+        ObjectId user_id FK "Foreign Key referencing users._id"
+        string blood_group "ABO/Rh Blood Group: A+, A-, B+, B-, AB+, AB-, O+, O-"
+        string phone "Contact telephone number"
+        float latitude "Geographical GPS Latitude"
+        float longitude "Geographical GPS Longitude"
+        boolean availability "Active donation readiness flag"
+        string last_donation_date "Date of preceding donation"
         date created_at "Profile creation timestamp"
         date updated_at "Profile modification timestamp"
     }
 
     HOSPITAL {
         ObjectId _id PK "Primary Key (Auto-generated ObjectId)"
-        ObjectId user_id FK, UK "Foreign Key referencing users._id (1:1 Unique Constraint)"
-        string hospital_name "Official medical healthcare institution name"
-        string phone UK "Main facility communication line (Unique constraint)"
-        string emergency_contact "24/7 dedicated critical trauma hotline number"
-        float latitude "Geographical GPS Latitude (-90.0 to +90.0)"
-        float longitude "Geographical GPS Longitude (-180.0 to +180.0)"
-        string address "Physical street, district, and city address string"
+        ObjectId user_id FK "Foreign Key referencing users._id"
+        string hospital_name "Official healthcare facility name"
+        string phone UK "Main facility contact line"
+        string emergency_contact "24/7 dedicated critical trauma hotline"
+        float latitude "Geographical GPS Latitude"
+        float longitude "Geographical GPS Longitude"
+        string address "Physical street and district address"
         date created_at "Profile creation timestamp"
         date updated_at "Profile modification timestamp"
     }
@@ -272,34 +273,34 @@ erDiagram
     BLOOD_INVENTORY {
         ObjectId _id PK "Primary Key (Auto-generated ObjectId)"
         ObjectId hospital_id FK "Foreign Key referencing hospitals._id"
-        string blood_group "Blood type key (Domain: A+, A-, B+, B-, AB+, AB-, O+, O-)"
-        int units "Available whole blood units in storage (Constraint: units >= 0)"
+        string blood_group "Blood type key (A+, A-, B+, B-, AB+, AB-, O+, O-)"
+        int units "Available whole blood units in storage"
         date updated_at "Stock audit modification timestamp"
     }
 
     BLOOD_REQUEST {
         ObjectId _id PK "Primary Key (Auto-generated ObjectId)"
         ObjectId hospital_id FK "Foreign Key referencing hospitals._id"
-        string blood_group "Target blood group requested by trauma unit"
-        int units_required "Required blood unit volume (Constraint: units_required >= 1)"
-        string urgency "Triage urgency tier: 'normal' | 'urgent' | 'emergency'"
-        string patient_name "Recipient / Patient identifier (Nullable)"
-        string required_by "Clinical deadline timestamp string (Nullable)"
-        string status "Triage state: 'searching' | 'fulfilled' | 'cancelled' | 'completed'"
+        string blood_group "Target blood group requested"
+        int units_required "Required blood unit volume"
+        string urgency "Triage urgency tier: normal | urgent | emergency"
+        string patient_name "Recipient / Patient identifier"
+        string required_by "Clinical deadline timestamp string"
+        string status "Triage state: searching | fulfilled | cancelled | completed"
         date created_at "Request broadcast timestamp"
         date updated_at "Request lifecycle state update timestamp"
     }
 
     NOTIFICATION {
         ObjectId _id PK "Primary Key (Auto-generated ObjectId)"
-        string recipient_id "Target recipient document identifier (Polymorphic FK)"
-        string recipient_role "Recipient role partition: 'donor' | 'hospital' | 'admin' | 'all'"
-        string notification_type "Category: 'emergency_alert' | 'system' | 'request_update'"
+        string recipient_id "Target recipient document identifier"
+        string recipient_role "Recipient role partition: donor | hospital | admin | all"
+        string notification_type "Category: emergency_alert | system | request_update"
         string title "Notification alert header"
         string message "Detailed message dispatch payload"
         string blood_group "Targeted blood group tag"
         string request_id FK "Optional foreign reference to blood_requests._id"
-        boolean is_read "Acknowledgement status flag (Default: false)"
+        boolean is_read "Acknowledgement status flag"
         date created_at "Notification dispatch timestamp"
         date updated_at "Notification update timestamp"
     }
@@ -496,20 +497,218 @@ export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 ---
 
+### Comprehensive Database Query Catalog (DBMS Operations & Mathematical Formalization)
+
+Below is the exhaustive mathematical and practical breakdown of every query executed within the LifeLink platform, contrasting formal Relational Algebra, ANSI SQL:1999, MongoDB Mongoose ODM queries, and internal storage engine execution plans:
+
+#### Query 1: User Identity Authentication & Single-Record Selection
+- **Relational Algebra**:
+  $$\sigma_{\text{email} = \text{target\_email}}(\text{USER})$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT user_id, name, email, password_hash, role
+  FROM users
+  WHERE email = 'donor@lifelink.org'
+  LIMIT 1;
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const user = await User.findOne({ email: email.toLowerCase() });
+  ```
+- **Storage Engine Execution Plan**: `IXSCAN` on `{ email: 1 }` Unique B-Tree Index. Time Complexity: $O(\log N)$. Zero collection scans (`COLLSCAN: 0`).
+
+---
+
+#### Query 2: Active Donor Discovery for Emergency Broadcast
+- **Relational Algebra**:
+  $$\pi_{\text{donor\_id}, \text{phone}, \text{latitude}, \text{longitude}, \text{availability}}(\sigma_{\text{blood\_group} = \text{'O-'} \land \text{availability} = \text{true}}(\text{DONOR}))$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT id, phone, latitude, longitude, availability
+  FROM donors
+  WHERE blood_group = 'O-' AND availability = TRUE;
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const donors = await Donor.find({ blood_group: 'O-', availability: true });
+  ```
+- **Storage Engine Execution Plan**: `IXSCAN` utilizing the Compound Index `{ blood_group: 1, availability: 1 }`. Filtering occurs at index-level prior to document fetching.
+
+---
+
+#### Query 3: Emergency Transfusion Request Join with Healthcare Facility Contact
+- **Relational Algebra**:
+  $$\pi_{\text{r.id}, \text{r.blood\_group}, \text{r.units}, \text{r.urgency}, \text{h.hospital\_name}, \text{h.phone}, \text{h.address}, \text{h.latitude}, \text{h.longitude}}(\sigma_{\text{r.blood\_group} = \text{'O-'} \land \text{r.status} = \text{'searching'}}(\text{BLOOD\_REQUEST } r) \bowtie_{r.\text{hospital\_id} = h.\text{\_id}} \text{HOSPITAL } h)$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT 
+    r.id AS request_id,
+    r.blood_group,
+    r.units_required,
+    r.urgency,
+    r.status,
+    h.hospital_name,
+    h.phone AS hospital_phone,
+    h.emergency_contact,
+    h.address AS hospital_address,
+    h.latitude AS hospital_latitude,
+    h.longitude AS hospital_longitude
+  FROM blood_requests r
+  INNER JOIN hospitals h ON r.hospital_id = h.id
+  WHERE r.blood_group = 'O-' AND r.status = 'searching'
+  ORDER BY r.created_at DESC;
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const requests = await BloodRequest.find({ blood_group: 'O-', status: 'searching' })
+    .populate('hospital_id')
+    .sort({ created_at: -1 });
+  ```
+- **Storage Engine Execution Plan**: `IXSCAN` on `{ blood_group: 1, status: 1 }` followed by indexed primary key lookups against `hospitals._id`.
+
+---
+
+#### Query 4: 8-Group Refrigeration Stock Imputation & Fetch
+- **Relational Algebra**:
+  $$\pi_{\text{blood\_group}, \text{units}}(\sigma_{\text{hospital\_id} = \text{target\_id}}(\text{BLOOD\_INVENTORY}))$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT blood_group, units
+  FROM blood_inventory
+  WHERE hospital_id = '65d1f89e2c4a1b0012e4f5a1';
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const stock = await BloodInventory.find({ hospital_id: targetId });
+  ```
+- **Storage Engine Execution Plan**: `IXSCAN` on compound unique index `{ hospital_id: 1, blood_group: 1 }` prefix `{ hospital_id: 1 }`. Guarantees retrieval of 8 records in $O(\log N)$ time.
+
+---
+
+#### Query 5: Atomic Inventory Modification (Compare-and-Swap / Upsert)
+- **Relational Algebra**:
+  $$\text{UPSERT}(\text{BLOOD\_INVENTORY}, \text{hospital\_id} = h \land \text{blood\_group} = g, \text{units} \leftarrow u)$$
+- **Standard ANSI SQL**:
+  ```sql
+  INSERT INTO blood_inventory (hospital_id, blood_group, units, updated_at)
+  VALUES ('65d1f89e2c4a1b0012e4f5a1', 'O+', 12, NOW())
+  ON CONFLICT (hospital_id, blood_group)
+  DO UPDATE SET units = EXCLUDED.units, updated_at = NOW();
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const item = await BloodInventory.findOneAndUpdate(
+    { hospital_id, blood_group },
+    { $set: { units } },
+    { new: true, upsert: true, runValidators: true }
+  );
+  ```
+- **Storage Engine Execution Plan**: Unique Index seek on `{ hospital_id: 1, blood_group: 1 }`. If matched, applies single-document in-place mutation. If unindexed, generates a new document atomically without table locks.
+
+---
+
+#### Query 6: Aggregate Platform Blood Reserves Rollup
+- **Relational Algebra**:
+  $$\gamma_{\text{blood\_group}, \text{SUM}(\text{units}) \to \text{total\_units}}(\text{BLOOD\_INVENTORY})$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT blood_group, COALESCE(SUM(units), 0) AS total_units
+  FROM blood_inventory
+  GROUP BY blood_group;
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const stats = await BloodInventory.aggregate([
+    {
+      $group: {
+        _id: '$blood_group',
+        total_units: { $sum: '$units' },
+      },
+    },
+  ]);
+  ```
+- **Storage Engine Execution Plan**: Document pipeline engine executing an in-memory hash aggregation across the 8 distinct blood group buckets.
+
+---
+
+#### Query 7: Topological Referential Cascade Deletion
+- **Relational Algebra**:
+  $$\text{DELETE FROM } \text{USER} \text{ WHERE } \text{user\_id} = u \implies \text{CASCADE DELETE } (\text{DONOR}, \text{HOSPITAL} \to (\text{BLOOD\_INVENTORY}, \text{BLOOD\_REQUEST}))$$
+- **Standard ANSI SQL**:
+  ```sql
+  DELETE FROM users WHERE id = '65d1f89e2c4a1b0012e4f5a1';
+  -- Cascade foreign keys automatically purge dependent rows:
+  -- FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  await Donor.deleteMany({ user_id });
+  const hospital = await Hospital.findOne({ user_id });
+  if (hospital) {
+    await BloodInventory.deleteMany({ hospital_id: hospital._id });
+    await BloodRequest.deleteMany({ hospital_id: hospital._id });
+    await Hospital.findByIdAndDelete(hospital._id);
+  }
+  await User.findByIdAndDelete(user_id);
+  ```
+
+---
+
+#### Query 8: Triage Request Status Transition
+- **Relational Algebra**:
+  $$\text{UPDATE } \text{BLOOD\_REQUEST} \text{ SET } \text{status} = \text{'fulfilled'}, \text{updated\_at} = \text{NOW}() \text{ WHERE } \text{request\_id} = r$$
+- **Standard ANSI SQL**:
+  ```sql
+  UPDATE blood_requests
+  SET status = 'fulfilled', updated_at = NOW()
+  WHERE id = '65d1f89e2c4a1b0012e4f5a9';
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const req = await BloodRequest.findByIdAndUpdate(
+    request_id,
+    { status: 'fulfilled' },
+    { new: true }
+  );
+  ```
+
+---
+
+#### Query 9: User Directory Multi-Attribute Pagination & Search
+- **Relational Algebra**:
+  $$\pi_{\text{user\_id}, \text{name}, \text{email}, \text{role}, \text{created\_at}}(\sigma_{\text{role} = \text{'donor'}}(\text{USER}))$$
+- **Standard ANSI SQL**:
+  ```sql
+  SELECT id, name, email, role, created_at
+  FROM users
+  WHERE role = 'donor'
+  ORDER BY created_at DESC
+  LIMIT 50 OFFSET 0;
+  ```
+- **MongoDB Mongoose Query**:
+  ```javascript
+  const users = await User.find({ role: 'donor' })
+    .select('-password_hash')
+    .sort({ created_at: -1 })
+    .limit(50);
+  ```
+
+---
+
 ## End-to-End Business Processes
 
 ### 1. User Onboarding and Role Segregation
 ```mermaid
 graph TD
-    A[Visitor Lands on LifeLink] --> B{Select Role}
-    B -->|Donor| C[Fill Donor Registration Form]
-    B -->|Hospital| D[Fill Hospital Registration Form]
+    A["Visitor Lands on LifeLink"] --> B{"Select Role"}
+    B -->|Donor| C["Fill Donor Registration Form"]
+    B -->|Hospital| D["Fill Hospital Registration Form"]
     
-    C --> E[1. POST /users creates User Account<br/>2. POST /users/:id/donor creates Donor Profile]
-    D --> F[1. POST /users creates User Account<br/>2. POST /users/:id/hospital creates Hospital Profile]
+    C --> E["1. POST /users creates User Account<br/>2. POST /users/:id/donor creates Donor Profile"]
+    D --> F["1. POST /users creates User Account<br/>2. POST /users/:id/hospital creates Hospital Profile"]
     
-    E --> G[Redirect to Donor Dashboard]
-    F --> H[Redirect to Hospital Blood Bank Management]
+    E --> G["Redirect to Donor Dashboard"]
+    F --> H["Redirect to Hospital Blood Bank Management"]
 ```
 
 ### 2. Hospital Blood Bank Stock Management
@@ -759,12 +958,31 @@ DBMS/
 To extend the system beyond the current production baseline, the following enterprise features and roadmap items are slated for upcoming releases:
 
 ```mermaid
-timeline
-    title LifeLink Strategic Development Roadmap
-    Phase 1 : Cross-Platform Native Mobile App (iOS & Android) : Emergency Push Beacon System : Offline-First Sync Engine
-    Phase 2 : AI/ML Blood Shortage Predictive Engine : Smart Donor Transfusion Eligibility Algorithms : WhatsApp & Interactive SMS Gateway
-    Phase 3 : IoT Cold-Chain & RFID Blood Bag Tracking : Blockchain-Backed Provenance Ledger : Drone Emergency Logistics Dispatch
-    Phase 4 : National Health Stack & EHR Integration (HL7/FHIR) : Multi-Hospital Regional Transit Mesh : AI Transfusion Cross-Match Assistant
+flowchart LR
+    subgraph Phase1["Phase 1: Mobile and Real-time Core"]
+        P1A["Cross-Platform Native App (iOS & Android)"]
+        P1B["FCM Emergency Push Beacon System"]
+        P1C["Offline-First Cache & Sync Engine"]
+    end
+
+    subgraph Phase2["Phase 2: Predictive Intelligence"]
+        P2A["AI/ML Shortage Forecasting (ARIMA / LSTM)"]
+        P2B["Smart Donor Transfusion Eligibility"]
+        P2C["Twilio & WhatsApp Interactive Gateway"]
+    end
+
+    subgraph Phase3["Phase 3: Hardware & Logistics"]
+        P3A["IoT Cold-Chain RFID Refrigerator Tracking"]
+        P3B["Hyperledger Transfusion Ledger"]
+        P3C["Autonomous Medical Drone Transit Mesh"]
+    end
+
+    subgraph Phase4["Phase 4: National Integration"]
+        P4A["HL7 FHIR v4.0 EHR Medical Gateway"]
+        P4B["Inter-Hospital Regional Transit Grid"]
+    end
+
+    Phase1 --> Phase2 --> Phase3 --> Phase4
 ```
 
 ### 1. Cross-Platform Native Mobile Application (iOS & Android)
