@@ -8,20 +8,45 @@
   }
 
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-[#f9fafb] font-sans text-slate-900 antialiased;
     text-rendering: optimizeLegibility;
   }
 
   ::selection {
-    @apply bg-primary/20 text-primary-dark;
+    @apply bg-blue-500/15 text-blue-900;
   }
 
   :focus-visible {
     outline-offset: 2px;
   }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300;
+  }
 }
 
 @layer utilities {
+  .glass-panel {
+    @apply bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-sm;
+  }
+
+  .minimal-card {
+    @apply bg-white border border-slate-200/80 rounded-2xl transition-all duration-200 hover:border-slate-300 hover:shadow-sm;
+  }
+
   .h-4\.5 {
     height: 1.125rem;
   }

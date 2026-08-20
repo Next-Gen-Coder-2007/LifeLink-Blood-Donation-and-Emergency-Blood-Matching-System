@@ -1,18 +1,13 @@
 import { Navigate, useLocation } from "react-router-dom";
-import type { ReactNode } from "react";
-import { getCurrentSession } from "@/lib/mockAuth";
+import { getSession } from "@/lib/api";
 
-interface ProtectedRouteProps {
-  children: ReactNode;
-}
-
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children }: { children: JSX.Element }) {
   const location = useLocation();
-  const session = getCurrentSession();
+  const session = getSession();
 
   if (!session) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
