@@ -313,14 +313,14 @@ erDiagram
 #### 1. Relational Schema Mapping & Mathematical Notation
 In relational algebra, the LifeLink database structure is formalized into 6 normalized relations:
 
-- $\text{USER}(\underline{\text{user\_id}}, \text{name}, \text{email}, \text{password\_hash}, \text{role}, \text{created\_at}, \text{updated\_at})$
-- $\text{DONOR}(\underline{\text{donor\_id}}, \overline{\text{user\_id}}, \text{blood\_group}, \text{phone}, \text{latitude}, \text{longitude}, \text{availability}, \text{last\_donation\_date}, \text{created\_at}, \text{updated\_at})$
-- $\text{HOSPITAL}(\underline{\text{hospital\_id}}, \overline{\text{user\_id}}, \text{hospital\_name}, \text{phone}, \text{emergency\_contact}, \text{latitude}, \text{longitude}, \text{address}, \text{created\_at}, \text{updated\_at})$
-- $\text{BLOOD\_INVENTORY}(\underline{\text{inventory\_id}}, \overline{\text{hospital\_id}}, \text{blood\_group}, \text{units}, \text{updated\_at})$
-- $\text{BLOOD\_REQUEST}(\underline{\text{request\_id}}, \overline{\text{hospital\_id}}, \text{blood\_group}, \text{units\_required}, \text{urgency}, \text{patient\_name}, \text{required\_by}, \text{status}, \text{created\_at}, \text{updated\_at})$
-- $\text{NOTIFICATION}(\underline{\text{notification\_id}}, \text{recipient\_id}, \text{recipient\_role}, \text{notification\_type}, \text{title}, \text{message}, \text{blood\_group}, \overline{\text{request\_id}}, \text{is\_read}, \text{created\_at}, \text{updated\_at})$
+- `USER(user_id, name, email, password_hash, role, created_at, updated_at)`
+- `DONOR(donor_id, user_id, blood_group, phone, latitude, longitude, availability, last_donation_date, created_at, updated_at)`
+- `HOSPITAL(hospital_id, user_id, hospital_name, phone, emergency_contact, latitude, longitude, address, created_at, updated_at)`
+- `BLOOD_INVENTORY(inventory_id, hospital_id, blood_group, units, updated_at)`
+- `BLOOD_REQUEST(request_id, hospital_id, blood_group, units_required, urgency, patient_name, required_by, status, created_at, updated_at)`
+- `NOTIFICATION(notification_id, recipient_id, recipient_role, notification_type, title, message, blood_group, request_id, is_read, created_at, updated_at)`
 
-*Where underlined attributes ($\underline{\text{PK}}$) denote Primary Keys, and over-lined attributes ($\overline{\text{FK}}$) denote Foreign Keys.*
+*Key constraints: Primary keys (PK) are unique non-null identifiers; Foreign keys (FK) link dependent relations.*
 
 ---
 
@@ -331,8 +331,8 @@ LifeLink implements **Disjoint Class Table Inheritance (Subtype Modeling)**:
   - `DONOR`: Extends `USER` with volunteer biological and spatial telemetry (`blood_group`, `phone`, `latitude`, `longitude`, `availability`).
   - `HOSPITAL`: Extends `USER` with medical enterprise infrastructure (`hospital_name`, `emergency_contact`, `address`, `latitude`, `longitude`).
 - **Constraint Enforcement**: The `role` discriminator column strictly guarantees mutually exclusive subtype relationships:
-  $$\forall u \in \text{USER}, \text{role}(u) = \text{'donor'} \iff \exists! d \in \text{DONOR} \text{ such that } d.\text{user\_id} = u.\text{\_id}$$
-  $$\forall u \in \text{USER}, \text{role}(u) = \text{'hospital'} \iff \exists! h \in \text{HOSPITAL} \text{ such that } h.\text{user\_id} = u.\text{\_id}$$
+  - Every User with `role = 'donor'` maps to exactly one record in `DONOR` where `DONOR.user_id = USER._id`.
+  - Every User with `role = 'hospital'` maps to exactly one record in `HOSPITAL` where `HOSPITAL.user_id = USER._id`.
 
 ---
 
@@ -351,22 +351,22 @@ LifeLink implements **Disjoint Class Table Inheritance (Subtype Modeling)**:
 
 ##### Normal Form Proofs:
 1. **First Normal Form (1NF)**: All attributes contain strictly atomic, scalar values. No multi-valued repeating groups (e.g. the 8 blood types are normalized into discrete rows in `blood_inventory` rather than an unindexed array).
-2. **Second Normal Form (2NF)**: All non-key attributes are fully functionally dependent on the complete primary key ($\text{PK} \to \text{Attributes}$). No partial dependencies exist.
-3. **Third Normal Form (3NF)**: No transitive functional dependencies exist ($X \to Y$ and $Y \to Z$ where $X$ is $\text{PK}$). For example, hospital address and phone are stored solely in `HOSPITAL`, not duplicated in `BLOOD_REQUEST`.
-4. **Boyce-Codd Normal Form (BCNF)**: For every functional dependency $X \to Y$, $X$ is a superkey.
+2. **Second Normal Form (2NF)**: All non-key attributes are fully functionally dependent on the complete primary key (`PK -> Attributes`). No partial dependencies exist.
+3. **Third Normal Form (3NF)**: No transitive functional dependencies exist (`X -> Y` and `Y -> Z` where `X` is `PK`). For example, hospital address and phone are stored solely in `HOSPITAL`, not duplicated in `BLOOD_REQUEST`.
+4. **Boyce-Codd Normal Form (BCNF)**: For every functional dependency `X -> Y`, `X` is a superkey.
 
 ##### Controlled De-normalization for Ultra-Low Latency Triage:
 In mission-critical emergency scenarios where seconds save lives, join operations across distributed shards introduce I/O latency. To achieve sub-millisecond query execution:
-- The donor matching endpoint (`GET /blood-requests/donor/:id`) utilizes index-covered `$lookup` joins in MongoDB, consolidating hospital contact and coordinates directly into the response payload in a single database round-trip ($O(1)$ lookup time).
+- The donor matching endpoint (`GET /blood-requests/donor/:id`) utilizes index-covered `$lookup` joins in MongoDB, consolidating hospital contact and coordinates directly into the response payload in a single database round-trip (O(1) lookup time).
 
 ---
 
 #### 5. ACID Transaction Management and Single-Document Atomicity
 
-- **Atomicity ($A$)**: MongoDB guarantees single-document atomicity for all write and update operations. Stock modifications use atomic operators (`$set`, `$inc`) ensuring partial inventory updates never occur.
-- **Consistency ($C$)**: Mongoose pre-save validation hooks and unique index constraints prevent invalid states from reaching the database storage engine (WiredTiger).
-- **Isolation ($I$)**: Read-uncommitted and read-committed isolation levels prevent dirty reads during concurrent triage updates.
-- **Durability ($D$)**: Write concerns (`w: 1` with write-ahead journal logging) guarantee committed transactions survive unexpected server restarts.
+- **Atomicity (A)**: MongoDB guarantees single-document atomicity for all write and update operations. Stock modifications use atomic operators (`$set`, `$inc`) ensuring partial inventory updates never occur.
+- **Consistency (C)**: Mongoose pre-save validation hooks and unique index constraints prevent invalid states from reaching the database storage engine (WiredTiger).
+- **Isolation (I)**: Read-uncommitted and read-committed isolation levels prevent dirty reads during concurrent triage updates.
+- **Durability (D)**: Write concerns (`w: 1` with write-ahead journal logging) guarantee committed transactions survive unexpected server restarts.
 
 ---
 
@@ -389,7 +389,7 @@ const UserSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true, // Unique B-Tree Index (Entity Integrity)
+      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -400,7 +400,7 @@ const UserSchema = new mongoose.Schema(
     role: {
       type: String,
       required: [true, 'Role is required'],
-      enum: ['donor', 'hospital', 'admin'], // Domain Integrity Constraint
+      enum: ['donor', 'hospital', 'admin'],
       default: 'donor',
     },
   },
@@ -418,19 +418,19 @@ const BloodInventorySchema = new mongoose.Schema(
   {
     hospital_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Hospital', // Referential Integrity (Foreign Key)
+      ref: 'Hospital',
       required: [true, 'Hospital ID is required'],
     },
     blood_group: {
       type: String,
       required: [true, 'Blood group is required'],
-      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], // Domain Constraint
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
     },
     units: {
       type: Number,
       required: true,
       default: 0,
-      min: [0, 'Units cannot be negative'], // Domain Range Constraint
+      min: [0, 'Units cannot be negative'],
     },
   },
   {
@@ -438,7 +438,6 @@ const BloodInventorySchema = new mongoose.Schema(
   }
 );
 
-// Compound Unique Key: Enforces strictly 1 record per blood group per hospital
 BloodInventorySchema.index({ hospital_id: 1, blood_group: 1 }, { unique: true });
 ```
 
@@ -450,7 +449,6 @@ export const deleteUser = async (req, res, next) => {
     const user = await User.findById(user_id);
     if (!user) return next(new AppError('User not found', 404));
 
-    // Referential Integrity: Cascade deletion in topological dependency order
     await Donor.deleteMany({ user_id });
 
     const hospital = await Hospital.findOne({ user_id });
@@ -474,13 +472,14 @@ export const deleteUser = async (req, res, next) => {
 #### 4. Geospatial Proximity Matching & Haversine Calculation
 LifeLink computes spatial proximity between donors and emergency trauma centers using the spherical Haversine trigonometric formula:
 
-$$d = 2R \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)$$
+```text
+d = 2R · atan2( √a, √(1−a) )
+where a = sin²(Δϕ / 2) + cos(ϕ₁) · cos(ϕ₂) · sin²(Δλ / 2)
+```
 
-$$\text{where } a = \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)$$
-
-- $\phi_1, \phi_2$: Latitude coordinates of donor and hospital in radians.
-- $\lambda_1, \lambda_2$: Longitude coordinates in radians.
-- $R$: Earth mean radius ($6,371 \text{ km}$).
+- `ϕ₁, ϕ₂`: Latitude coordinates of donor and hospital in radians.
+- `λ₁, λ₂`: Longitude coordinates in radians.
+- `R`: Earth mean radius (6,371 km).
 
 ```javascript
 export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -503,7 +502,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 1: User Identity Authentication & Single-Record Selection
 - **Relational Algebra**:
-  $$\sigma_{\text{email} = \text{target\_email}}(\text{USER})$$
+  `σ[email = target_email](USER)`
 - **Standard ANSI SQL**:
   ```sql
   SELECT user_id, name, email, password_hash, role
@@ -515,13 +514,13 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
   ```javascript
   const user = await User.findOne({ email: email.toLowerCase() });
   ```
-- **Storage Engine Execution Plan**: `IXSCAN` on `{ email: 1 }` Unique B-Tree Index. Time Complexity: $O(\log N)$. Zero collection scans (`COLLSCAN: 0`).
+- **Storage Engine Execution Plan**: `IXSCAN` on `{ email: 1 }` Unique B-Tree Index. Time Complexity: `O(log N)`. Zero collection scans (`COLLSCAN: 0`).
 
 ---
 
 #### Query 2: Active Donor Discovery for Emergency Broadcast
 - **Relational Algebra**:
-  $$\pi_{\text{donor\_id}, \text{phone}, \text{latitude}, \text{longitude}, \text{availability}}(\sigma_{\text{blood\_group} = \text{'O-'} \land \text{availability} = \text{true}}(\text{DONOR}))$$
+  `π[donor_id, phone, latitude, longitude, availability]( σ[blood_group = 'O-' ∧ availability = true](DONOR) )`
 - **Standard ANSI SQL**:
   ```sql
   SELECT id, phone, latitude, longitude, availability
@@ -538,7 +537,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 3: Emergency Transfusion Request Join with Healthcare Facility Contact
 - **Relational Algebra**:
-  $$\pi_{\text{r.id}, \text{r.blood\_group}, \text{r.units}, \text{r.urgency}, \text{h.hospital\_name}, \text{h.phone}, \text{h.address}, \text{h.latitude}, \text{h.longitude}}(\sigma_{\text{r.blood\_group} = \text{'O-'} \land \text{r.status} = \text{'searching'}}(\text{BLOOD\_REQUEST } r) \bowtie_{r.\text{hospital\_id} = h.\text{\_id}} \text{HOSPITAL } h)$$
+  `π[r.id, r.blood_group, r.units_required, r.urgency, h.hospital_name, h.phone, h.address, h.latitude, h.longitude]( σ[r.blood_group = 'O-' ∧ r.status = 'searching'](BLOOD_REQUEST r) ⨝[r.hospital_id = h._id] HOSPITAL h )`
 - **Standard ANSI SQL**:
   ```sql
   SELECT 
@@ -570,7 +569,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 4: 8-Group Refrigeration Stock Imputation & Fetch
 - **Relational Algebra**:
-  $$\pi_{\text{blood\_group}, \text{units}}(\sigma_{\text{hospital\_id} = \text{target\_id}}(\text{BLOOD\_INVENTORY}))$$
+  `π[blood_group, units]( σ[hospital_id = target_id](BLOOD_INVENTORY) )`
 - **Standard ANSI SQL**:
   ```sql
   SELECT blood_group, units
@@ -581,13 +580,13 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
   ```javascript
   const stock = await BloodInventory.find({ hospital_id: targetId });
   ```
-- **Storage Engine Execution Plan**: `IXSCAN` on compound unique index `{ hospital_id: 1, blood_group: 1 }` prefix `{ hospital_id: 1 }`. Guarantees retrieval of 8 records in $O(\log N)$ time.
+- **Storage Engine Execution Plan**: `IXSCAN` on compound unique index `{ hospital_id: 1, blood_group: 1 }` prefix `{ hospital_id: 1 }`. Guarantees retrieval of 8 records in `O(log N)` time.
 
 ---
 
 #### Query 5: Atomic Inventory Modification (Compare-and-Swap / Upsert)
 - **Relational Algebra**:
-  $$\text{UPSERT}(\text{BLOOD\_INVENTORY}, \text{hospital\_id} = h \land \text{blood\_group} = g, \text{units} \leftarrow u)$$
+  `UPSERT(BLOOD_INVENTORY, hospital_id = h ∧ blood_group = g, units ← u)`
 - **Standard ANSI SQL**:
   ```sql
   INSERT INTO blood_inventory (hospital_id, blood_group, units, updated_at)
@@ -609,7 +608,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 6: Aggregate Platform Blood Reserves Rollup
 - **Relational Algebra**:
-  $$\gamma_{\text{blood\_group}, \text{SUM}(\text{units}) \to \text{total\_units}}(\text{BLOOD\_INVENTORY})$$
+  `γ[blood_group, SUM(units) → total_units](BLOOD_INVENTORY)`
 - **Standard ANSI SQL**:
   ```sql
   SELECT blood_group, COALESCE(SUM(units), 0) AS total_units
@@ -633,7 +632,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 7: Topological Referential Cascade Deletion
 - **Relational Algebra**:
-  $$\text{DELETE FROM } \text{USER} \text{ WHERE } \text{user\_id} = u \implies \text{CASCADE DELETE } (\text{DONOR}, \text{HOSPITAL} \to (\text{BLOOD\_INVENTORY}, \text{BLOOD\_REQUEST}))$$
+  `DELETE FROM USER WHERE user_id = u ⟹ CASCADE DELETE (DONOR, HOSPITAL → (BLOOD_INVENTORY, BLOOD_REQUEST))`
 - **Standard ANSI SQL**:
   ```sql
   DELETE FROM users WHERE id = '65d1f89e2c4a1b0012e4f5a1';
@@ -656,7 +655,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 8: Triage Request Status Transition
 - **Relational Algebra**:
-  $$\text{UPDATE } \text{BLOOD\_REQUEST} \text{ SET } \text{status} = \text{'fulfilled'}, \text{updated\_at} = \text{NOW}() \text{ WHERE } \text{request\_id} = r$$
+  `UPDATE BLOOD_REQUEST SET status = 'fulfilled', updated_at = NOW() WHERE request_id = r`
 - **Standard ANSI SQL**:
   ```sql
   UPDATE blood_requests
@@ -676,7 +675,7 @@ Below is the exhaustive mathematical and practical breakdown of every query exec
 
 #### Query 9: User Directory Multi-Attribute Pagination & Search
 - **Relational Algebra**:
-  $$\pi_{\text{user\_id}, \text{name}, \text{email}, \text{role}, \text{created\_at}}(\sigma_{\text{role} = \text{'donor'}}(\text{USER}))$$
+  `π[user_id, name, email, role, created_at]( σ[role = 'donor'](USER) )`
 - **Standard ANSI SQL**:
   ```sql
   SELECT id, name, email, role, created_at
