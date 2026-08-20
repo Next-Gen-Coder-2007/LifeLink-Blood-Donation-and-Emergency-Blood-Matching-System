@@ -1,166 +1,121 @@
-import { Routes, Route } from "react-router-dom";
-
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { getSession } from "@/lib/api";
+import { AuthModalProvider, useAuthModal } from "@/context/AuthModalContext";
+import { LoginModal } from "@/components/auth/LoginModal";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 
-import { LandingPage } from "@/pages/LandingPage";
-import { LoginPage } from "@/pages/LoginPage";
-import { RegisterSelectionPage } from "@/pages/RegisterSelectionPage";
-import { DonorRegisterPage } from "@/pages/DonorRegisterPage";
-import { HospitalRegisterPage } from "@/pages/HospitalRegisterPage";
+import {
+  LandingPage,
+  NotFoundPage,
+  DonorDashboard,
+  DonorBloodRequests,
+  DonorProfilePage,
+  DonationHistoryPage,
+  NotificationsPage,
+  DonorSettingsPage,
+  HospitalDashboard,
+  HospitalBloodBank,
+  HospitalBloodRequests,
+  AdminLoginPage,
+  AdminDashboard,
+  AdminManagementPage,
+} from "@/pages";
 
-import { DonorDashboardPage } from "@/pages/DonarDashboard";
+function DashboardRedirect() {
+  const session = getSession();
+  if (!session) return <Navigate to="/" replace />;
+  if (session.user.role === "hospital") return <Navigate to="/hospital/dashboard" replace />;
+  if (session.user.role === "admin") return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/donor/dashboard" replace />;
+}
 
-import { AdminLoginPage } from "@/pages/AdminLoginPage";
-import { Admin } from "@/pages/Admin";
-import { AdminManagementPage } from "@/pages/AdminManagementPage";
+function ModalRouteTrigger({ type, tab = "donor" }: { type: "login" | "register"; tab?: "donor" | "hospital" }) {
+  const { openLogin, openRegister } = useAuthModal();
+  const navigate = useNavigate();
 
-import { NotFoundPage } from "@/pages/NotFoundPage";
+  useEffect(() => {
+    if (type === "login") openLogin();
+    else openRegister(tab);
+    navigate("/", { replace: true });
+  }, [type, tab, openLogin, openRegister, navigate]);
 
-import { DonorProfilePage } from "@/pages/DonorProfilePage";
-import { BloodRequestsPage } from "@/pages/BloodRequestsPage";
-import { NotificationsPage } from "@/pages/NotificationsPage";
-import { DonationHistoryPage } from "@/pages/DonationHistoryPage";
-import { DonorSettingsPage } from "@/pages/DonorSettingsPage";
-import { HospitalDashboard } from "@/pages/HospitalDashboard";
+  return null;
+}
 
-import { HospitalBloodBank } from "@/pages/HospitalBloodBank";
-import { HospitalBloodRequests } from "@/pages/HospitalBloodRequests";
+function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen flex-col bg-[#f9fafb]">
+      <Navbar />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
+}
 
-import { DonorBloodRequests } from "@/pages/DonorBloodRequests";
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen flex-col bg-[#f9fafb]">
+      <Navbar />
+      <main className="flex-1 pb-12">{children}</main>
+    </div>
+  );
+}
 
-
-
-export default function App() {
+function AppRoutes() {
   return (
     <>
       <ScrollToTop />
+      <LoginModal />
+      <RegisterModal />
 
       <Routes>
+        {/* Public Marketing Route (Navbar + Landing Page + Footer) */}
+        <Route path="/" element={<PublicLayout><LandingPage /></PublicLayout>} />
 
-        {/* ================= PUBLIC ================= */}
+        {/* Modal Auth Triggers (Direct Modal Launch) */}
+        <Route path="/login" element={<ModalRouteTrigger type="login" />} />
+        <Route path="/register" element={<ModalRouteTrigger type="register" tab="donor" />} />
+        <Route path="/register/donor" element={<ModalRouteTrigger type="register" tab="donor" />} />
+        <Route path="/register/hospital" element={<ModalRouteTrigger type="register" tab="hospital" />} />
 
-        <Route
-          path="/"
-          element={
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
+        {/* Intelligent Role Redirect */}
+        <Route path="/dashboard" element={<DashboardRedirect />} />
 
-              <main className="flex-1">
-                <LandingPage />
-              </main>
+        {/* Donor Operations (AppLayout without marketing footer) */}
+        <Route path="/donor/dashboard" element={<AppLayout><DonorDashboard /></AppLayout>} />
+        <Route path="/donor/requests" element={<AppLayout><DonorBloodRequests /></AppLayout>} />
+        <Route path="/donor/profile" element={<AppLayout><DonorProfilePage /></AppLayout>} />
+        <Route path="/donor/history" element={<AppLayout><DonationHistoryPage /></AppLayout>} />
+        <Route path="/donor/notifications" element={<AppLayout><NotificationsPage /></AppLayout>} />
+        <Route path="/donor/settings" element={<AppLayout><DonorSettingsPage /></AppLayout>} />
 
-              <Footer />
-            </div>
-          }
-        />
+        {/* Hospital Operations (AppLayout without marketing footer) */}
+        <Route path="/hospital/dashboard" element={<AppLayout><HospitalDashboard /></AppLayout>} />
+        <Route path="/hospital/blood-bank" element={<AppLayout><HospitalBloodBank /></AppLayout>} />
+        <Route path="/hospital/requests" element={<AppLayout><HospitalBloodRequests /></AppLayout>} />
 
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+        {/* Admin Operations (AppLayout without marketing footer) */}
+        <Route path="/admin/login" element={<AppLayout><AdminLoginPage /></AppLayout>} />
+        <Route path="/admin/dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
+        <Route path="/admin/users" element={<AppLayout><AdminManagementPage type="users" /></AppLayout>} />
+        <Route path="/admin/donors" element={<AppLayout><AdminManagementPage type="donors" /></AppLayout>} />
+        <Route path="/admin/hospitals" element={<AppLayout><AdminManagementPage type="hospitals" /></AppLayout>} />
 
-        <Route
-          path="/register"
-          element={<RegisterSelectionPage />}
-        />
-
-        <Route
-          path="/register/donor"
-          element={<DonorRegisterPage />}
-        />
-
-        <Route
-          path="/register/hospital"
-          element={<HospitalRegisterPage />}
-        />
-
-        {/* ================= ADMIN ================= */}
-
-        <Route
-          path="/admin/login"
-          element={<AdminLoginPage />}
-        />
-
-        <Route
-          path="/admin/dashboard"
-          element={<Admin />}
-        />
-
-        {/* ================= ADMIN MANAGEMENT ================= */}
-
-          <Route
-            path="/admin/donors"
-            element={<AdminManagementPage type="donors" />}
-          />
-
-          <Route
-            path="/admin/hospitals"
-            element={<AdminManagementPage type="hospitals" />}
-          />
-
-          <Route
-            path="/admin/users"
-            element={<AdminManagementPage type="users" />}
-          />
-
-        {/* ================= 404 ================= */}
-
-        <Route
-          path="*"
-          element={<NotFoundPage />}
-        />
-
-
-        <Route
-          path="/donor/dashboard"
-          element={<DonorDashboardPage />}
-        />
-
-         <Route
-          path="/donor/profile"
-          element={<DonorProfilePage />}
-        />
-
-        <Route
-          path="/donor/notifications"
-          element={<NotificationsPage />}
-        />
-
-        <Route
-          path="/donor/history"
-          element={<DonationHistoryPage />}
-        />  
-
-        <Route
-          path="/donor/settings"
-          element={<DonorSettingsPage />}
-        />
-
-
-        <Route
-          path="/hospital/dashboard"
-          element={<HospitalDashboard />}
-        />
-
-
-        <Route
-          path="/hospital/blood-bank"
-          element={<HospitalBloodBank />}
-        />
-
-        <Route
-            path="/hospital/requests"
-            element={<HospitalBloodRequests />}
-          />
-        <Route
-            path="/donor/requests"
-            element={<DonorBloodRequests />}
-          />
-
+        {/* 404 Fallback */}
+        <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
       </Routes>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthModalProvider>
+      <AppRoutes />
+    </AuthModalProvider>
   );
 }
