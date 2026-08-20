@@ -872,11 +872,31 @@ To guarantee millisecond latency under high concurrency, MongoDB indexes are def
    npm install
    ```
 
-3. Start the Vite development server:
+3. Configure environment variables (optional for local dev, required for deployment):
+   ```bash
+   # Copy the example environment template
+   cp .env.example .env
+   ```
+   ```env
+   # Backend API Endpoint
+   # Local development:
+   VITE_API_BASE_URL=http://127.0.0.1:8000
+
+   # Cloud/Production deployment:
+   # VITE_API_BASE_URL=https://api.yourdomain.com
+   ```
+
+4. Start the Vite development server:
    ```bash
    npm run dev
    ```
    *The frontend will launch at `http://localhost:5173/`.*
+
+5. Build for production deployment (Vercel, Netlify, Render, Cloudflare Pages):
+   ```bash
+   npm run build
+   ```
+   *The compiled, optimized distribution bundle will be output to `frontend/dist/`.*
 
 ---
 
