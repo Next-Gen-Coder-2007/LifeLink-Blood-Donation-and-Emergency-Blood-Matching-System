@@ -15,7 +15,6 @@ export function RegisterModal() {
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
 
-  // Donor form
   const [donorForm, setDonorForm] = useState({
     name: "",
     email: "",
@@ -27,7 +26,6 @@ export function RegisterModal() {
     availability: true,
   });
 
-  // Hospital form
   const [hospForm, setHospForm] = useState({
     name: "",
     email: "",
@@ -43,11 +41,21 @@ export function RegisterModal() {
   const isOpen = modalType === "register";
 
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) closeModals();
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, closeModals]);
 
   if (!isOpen) return null;
@@ -165,7 +173,7 @@ export function RegisterModal() {
         if (e.target === e.currentTarget) closeModals();
       }}
     >
-      <div className="relative w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-slate-100 my-8">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-slate-100 my-8 max-h-[90vh] overflow-y-auto">
         <button
           type="button"
           onClick={closeModals}
@@ -219,7 +227,7 @@ export function RegisterModal() {
                     value={donorForm.name}
                     onChange={(e) => setDonorForm({ ...donorForm, name: e.target.value })}
                     placeholder="John Doe"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
                 <div>
@@ -230,7 +238,7 @@ export function RegisterModal() {
                     value={donorForm.email}
                     onChange={(e) => setDonorForm({ ...donorForm, email: e.target.value })}
                     placeholder="john@example.com"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
               </div>
@@ -244,7 +252,7 @@ export function RegisterModal() {
                     value={donorForm.password}
                     onChange={(e) => setDonorForm({ ...donorForm, password: e.target.value })}
                     placeholder="••••••••"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
                 <div>
@@ -255,7 +263,7 @@ export function RegisterModal() {
                     value={donorForm.phone}
                     onChange={(e) => setDonorForm({ ...donorForm, phone: e.target.value })}
                     placeholder="+1 555 0192"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
               </div>
@@ -265,7 +273,7 @@ export function RegisterModal() {
                 <select
                   value={donorForm.blood_group}
                   onChange={(e) => setDonorForm({ ...donorForm, blood_group: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-red-500 focus:outline-none transition shadow-2xs"
                 >
                   {BLOOD_GROUPS.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -273,7 +281,7 @@ export function RegisterModal() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-200/80">
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 border border-slate-200/80">
                 <span className="text-[11px] text-slate-500 font-mono">
                   GPS: {donorForm.latitude.toFixed(4)}, {donorForm.longitude.toFixed(4)}
                 </span>
@@ -315,7 +323,7 @@ export function RegisterModal() {
                     value={hospForm.name}
                     onChange={(e) => setHospForm({ ...hospForm, name: e.target.value })}
                     placeholder="Dr. Sarah Johnson"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
                 <div>
@@ -326,7 +334,7 @@ export function RegisterModal() {
                     value={hospForm.hospital_name}
                     onChange={(e) => setHospForm({ ...hospForm, hospital_name: e.target.value })}
                     placeholder="City General Hospital"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
               </div>
@@ -340,7 +348,7 @@ export function RegisterModal() {
                     value={hospForm.email}
                     onChange={(e) => setHospForm({ ...hospForm, email: e.target.value })}
                     placeholder="admin@hospital.org"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
                 <div>
@@ -351,7 +359,7 @@ export function RegisterModal() {
                     value={hospForm.password}
                     onChange={(e) => setHospForm({ ...hospForm, password: e.target.value })}
                     placeholder="••••••••"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
               </div>
@@ -365,7 +373,7 @@ export function RegisterModal() {
                     value={hospForm.phone}
                     onChange={(e) => setHospForm({ ...hospForm, phone: e.target.value })}
                     placeholder="+1 555 0100"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
                 <div>
@@ -376,7 +384,7 @@ export function RegisterModal() {
                     value={hospForm.emergency_contact}
                     onChange={(e) => setHospForm({ ...hospForm, emergency_contact: e.target.value })}
                     placeholder="+1 555 0911"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                   />
                 </div>
               </div>
@@ -389,11 +397,11 @@ export function RegisterModal() {
                   value={hospForm.address}
                   onChange={(e) => setHospForm({ ...hospForm, address: e.target.value })}
                   placeholder="123 Health Ave, Medical District"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none transition shadow-2xs"
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-200/80">
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 border border-slate-200/80">
                 <span className="text-[11px] text-slate-500 font-mono">
                   GPS: {hospForm.latitude.toFixed(4)}, {hospForm.longitude.toFixed(4)}
                 </span>
