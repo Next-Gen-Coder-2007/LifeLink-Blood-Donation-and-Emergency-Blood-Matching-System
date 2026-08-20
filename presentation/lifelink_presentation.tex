@@ -50,8 +50,25 @@
 \setbeamercolor{block title example}{bg=SuccessGreen, fg=white}
 \setbeamercolor{block body example}{bg=CodeBg, fg=DarkSlate}
 
+% JavaScript Definition for listings
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, const, let, async, await, export},
+  keywordstyle=\color{AccentBlue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{DarkSlate}\bfseries,
+  identifierstyle=\color{DarkSlate},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{SoftSlate}\itshape,
+  stringstyle=\color{MedicalRed}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
 % Code Listing Configuration
 \lstset{
+    language=JavaScript,
     backgroundcolor=\color{CodeBg},
     basicstyle=\ttfamily\scriptsize\color{DarkSlate},
     keywordstyle=\color{AccentBlue}\bfseries,
@@ -60,7 +77,7 @@
     breaklines=true,
     showstringspaces=false,
     frame=single,
-    rulecolor=\color{slate!30},
+    rulecolor=\color{SoftSlate!30},
     numbers=none
 }
 
@@ -171,7 +188,7 @@
         \node (start) [startstop] {Hospital Broadcasts Request};
         \node (val) [decision, right=0.8cm of start] {Valid Payload?};
         \node (save) [process, right=0.8cm of val] {Status: \texttt{searching}};
-        \node (query) [process, below=0.8cm of save] {Query Donors ($O(\log N)$)};
+        \node (query) [process, below=0.8cm of save] {Query Donors ($\mathcal{O}(\log N)$)};
         \node (calc) [process, left=0.8cm of query] {Compute Haversine Proximity};
         \node (alert) [process, left=0.8cm of calc] {Dispatch Alerts to Radar};
         \node (coord) [decision, below=0.8cm of alert] {Donor Confirms?};
@@ -203,10 +220,10 @@
                 \scriptsize
                 \begin{itemize}
                     \item \textbf{USER}(\underline{user\_id}, name, email, password\_hash, role, created\_at)
-                    \item \textbf{DONOR}(\underline{donor\_id}, \overline{user\_id}, blood\_group, phone, latitude, longitude, availability)
-                    \item \textbf{HOSPITAL}(\underline{hospital\_id}, \overline{user\_id}, hospital\_name, phone, emergency\_contact, address, latitude, longitude)
-                    \item \textbf{BLOOD\_INVENTORY}(\underline{inventory\_id}, \overline{hospital\_id}, blood\_group, units, updated\_at)
-                    \item \textbf{BLOOD\_REQUEST}(\underline{request\_id}, \overline{hospital\_id}, blood\_group, units\_required, urgency, status)
+                    \item \textbf{DONOR}(\underline{donor\_id}, \underline{user\_id}, blood\_group, phone, latitude, longitude, availability)
+                    \item \textbf{HOSPITAL}(\underline{hospital\_id}, \underline{user\_id}, hospital\_name, phone, emergency\_contact, address, latitude, longitude)
+                    \item \textbf{BLOOD\_INVENTORY}(\underline{inventory\_id}, \underline{hospital\_id}, blood\_group, units, updated\_at)
+                    \item \textbf{BLOOD\_REQUEST}(\underline{request\_id}, \underline{hospital\_id}, blood\_group, units\_required, urgency, status)
                     \item \textbf{NOTIFICATION}(\underline{notification\_id}, recipient\_id, recipient\_role, title, message, is\_read)
                 \end{itemize}
             \end{block}
@@ -216,8 +233,8 @@
                 \scriptsize
                 \textbf{Supertype}: \texttt{USER} contains shared authentication credentials. \\
                 \textbf{Subtypes}: \texttt{DONOR} and \texttt{HOSPITAL} specialize based on discriminator \texttt{role}:
-                $$\forall u \in \text{USER}, \text{role}(u) = \text{'donor'} \iff \exists! d \in \text{DONOR}$$
-                $$\forall u \in \text{USER}, \text{role}(u) = \text{'hospital'} \iff \exists! h \in \text{HOSPITAL}$$
+                \[ \forall u \in \text{USER},\; \text{role}(u) = \text{'donor'} \iff \exists!\, d \in \text{DONOR} \]
+                \[ \forall u \in \text{USER},\; \text{role}(u) = \text{'hospital'} \iff \exists!\, h \in \text{HOSPITAL} \]
             \end{alertblock}
             \begin{exampleblock}{\textbf{Key Constraints}}
                 \scriptsize
@@ -251,7 +268,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{6. ACID Guarantees \& Concurrency Control}
+\begin{frame}[fragile]{6. ACID Guarantees \& Concurrency Control}
     \begin{columns}[T]
         \begin{column}{0.5\textwidth}
             \begin{block}{\textbf{ACID Transaction Guarantees}}
@@ -267,7 +284,7 @@
             \begin{alertblock}{\textbf{Race Condition Mitigation (CAS)}}
                 \scriptsize
                 To prevent negative stock during concurrent emergency allocations, atomic compare-and-swap is applied:
-                \begin{lstlisting}[language=JavaScript]
+\begin{lstlisting}
 // Atomic allocation with safety precondition
 await BloodInventory.updateOne(
   { 
@@ -277,7 +294,7 @@ await BloodInventory.updateOne(
   },
   { $inc: { units: -requiredUnits } }
 );
-                \end{lstlisting}
+\end{lstlisting}
             \end{alertblock}
         \end{column}
     \end{columns}
@@ -291,19 +308,15 @@ await BloodInventory.updateOne(
     \begin{table}[H]
         \centering
         \tiny
-        \begin{tabular}{p{2.8cm}p{3.8cm}p{4.2cm}p{1.8cm}}
+        \begin{tabular}{p{2.6cm}p{3.8cm}p{4.2cm}p{1.8cm}}
             \toprule
             \textbf{System Operation} & \textbf{Relational Algebra} & \textbf{Standard ANSI SQL} & \textbf{Index \& Time} \\
             \midrule
-            \textbf{User Authentication} & $\sigma[\text{email} = e](\text{USER})$ & \texttt{SELECT * FROM users WHERE email = ? LIMIT 1} & \texttt{IXSCAN} $\mathcal{O}(\log N)$ \\
-            \addlinespace
-            \textbf{Active Donor Discovery} & $\pi[\text{id, phone, lat, lng}](\sigma[\text{group}=g \land \text{avail}=\text{true}](\text{DONOR}))$ & \texttt{SELECT id, phone, latitude, longitude FROM donors WHERE blood\_group = ? AND availability = true} & \texttt{IXSCAN} (Compound) $\mathcal{O}(\log N)$ \\
-            \addlinespace
-            \textbf{Emergency Triage Join} & $\pi[\dots](\sigma[\text{group}=g \land \text{status}=\text{'searching'}](\text{REQUEST}) \bowtie \text{HOSPITAL})$ & \texttt{SELECT * FROM blood\_requests r INNER JOIN hospitals h ON r.hospital\_id = h.id WHERE r.blood\_group = ?} & \texttt{IXSCAN} + PK Join $\mathcal{O}(\log N)$ \\
-            \addlinespace
-            \textbf{Stock Matrix Upsert} & $\text{UPSERT}(\text{INVENTORY}, h \land g, \text{units} \leftarrow u)$ & \texttt{INSERT INTO blood\_inventory \dots ON CONFLICT (hospital\_id, blood\_group) DO UPDATE} & Unique B-Tree Seek $\mathcal{O}(1)$ \\
-            \addlinespace
-            \textbf{Platform Total Reserve} & $\gamma[\text{blood\_group}, \text{SUM}(\text{units})](\text{INVENTORY})$ & \texttt{SELECT blood\_group, SUM(units) FROM blood\_inventory GROUP BY blood_group} & Hash Aggregate Pipeline $\mathcal{O}(N)$ \\
+            \textbf{User Authentication} & $\sigma[\text{email} = e](\text{USER})$ & \texttt{SELECT * FROM users WHERE email = ? LIMIT 1} & \texttt{IXSCAN} $\mathcal{O}(\log N)$ \\[4pt]
+            \textbf{Active Donor Discovery} & $\pi[\text{id, phone, lat, lng}](\sigma[\text{group}=g \land \text{avail}=\text{true}](\text{DONOR}))$ & \texttt{SELECT id, phone, latitude, longitude FROM donors WHERE blood\_group = ? AND availability = true} & \texttt{IXSCAN} (Compound) $\mathcal{O}(\log N)$ \\[4pt]
+            \textbf{Emergency Triage Join} & $\pi[\dots](\sigma[\text{group}=g \land \text{status}=\text{'searching'}](\text{REQUEST}) \bowtie \text{HOSPITAL})$ & \texttt{SELECT * FROM blood\_requests r INNER JOIN hospitals h ON r.hospital\_id = h.id WHERE r.blood\_group = ?} & \texttt{IXSCAN} + PK Join $\mathcal{O}(\log N)$ \\[4pt]
+            \textbf{Stock Matrix Upsert} & $\text{UPSERT}(\text{INVENTORY}, h \land g, \text{units} \leftarrow u)$ & \texttt{INSERT INTO blood\_inventory \dots ON CONFLICT (hospital\_id, blood\_group) DO UPDATE} & Unique B-Tree Seek $\mathcal{O}(1)$ \\[4pt]
+            \textbf{Platform Total Reserve} & $\gamma[\text{blood\_group}, \text{SUM}(\text{units})](\text{INVENTORY})$ & \texttt{SELECT blood\_group, SUM(units) FROM blood\_inventory GROUP BY blood\_group} & Hash Aggregate $\mathcal{O}(N)$ \\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -336,7 +349,7 @@ await BloodInventory.updateOne(
         \end{column}
         \begin{column}{0.52\textwidth}
             \begin{alertblock}{\textbf{Cascade Implementation Code}}
-                \begin{lstlisting}[language=JavaScript]
+\begin{lstlisting}
 export const deleteUser = async (req, res, next) => {
   const { user_id } = req.params;
   // 1. Purge linked donor
@@ -355,7 +368,7 @@ export const deleteUser = async (req, res, next) => {
   // 3. Purge root user record
   await User.findByIdAndDelete(user_id);
 };
-                \end{lstlisting}
+\end{lstlisting}
             \end{alertblock}
         \end{column}
     \end{columns}
@@ -370,8 +383,8 @@ export const deleteUser = async (req, res, next) => {
         \begin{column}{0.5\textwidth}
             \begin{block}{\textbf{Spherical Trigonometry Formula}}
                 \scriptsize
-                $$d = 2R \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)$$
-                $$a = \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)$$
+                \[ d = 2R \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1-a}\right) \]
+                \[ a = \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right) \]
                 \begin{itemize}
                     \item $\phi_1, \phi_2$: Latitude coordinates in radians.
                     \item $\lambda_1, \lambda_2$: Longitude coordinates in radians.
@@ -470,7 +483,7 @@ export const deleteUser = async (req, res, next) => {
             \toprule
             \textbf{Verification Layer} & \textbf{Test Suite / Command} & \textbf{Outcome} \\
             \midrule
-            \textbf{Frontend TypeScript Build} & \texttt{tsc -b \&\& vite build} & \textbf{0 Errors (4.04s)} \\
+            \textbf{Frontend TypeScript Build} & \texttt{tsc -b \&\& vite build} & \textbf{0 Errors (3.17s)} \\
             \textbf{REST API Endpoints} & Complete 18-Route Integration Matrix & \textbf{100\% Verified} \\
             \textbf{DBMS Integrity Checks} & Unique Compound Index \& Cascades & \textbf{Zero Orphan Records} \\
             \textbf{Design \& Responsiveness} & Minimalist Glassmorphism + Scroll-Lock & \textbf{Production-Ready} \\
