@@ -25,23 +25,30 @@
    - [API Request and Middleware Pipeline](#api-request-and-middleware-pipeline)
    - [Emergency Blood Matching Flowchart](#emergency-blood-matching-flowchart)
    - [Referential Integrity and Cascade Deletion Lifecycle](#referential-integrity-and-cascade-deletion-lifecycle)
-4. [Entity-Relationship (ER) Diagram](#entity-relationship-er-diagram)
-5. [End-to-End Business Processes](#end-to-end-business-processes)
+4. [Unified Modeling Language (UML) Diagrams](#unified-modeling-language-uml-diagrams)
+   - [1. UML Class Diagram (Domain Model & Operations)](#1-uml-class-diagram-domain-model--operations)
+   - [2. UML Use Case Diagram (Actors & Functional Scope)](#2-uml-use-case-diagram-actors--functional-scope)
+   - [3. UML Sequence Diagram (Emergency Triage & Notification Lifecycle)](#3-uml-sequence-diagram-emergency-triage--notification-lifecycle)
+   - [4. UML State Machine Diagram (Blood Request Statechart)](#4-uml-state-machine-diagram-blood-request-statechart)
+   - [5. UML Activity Diagram (Emergency Dispatch & Match Workflow)](#5-uml-activity-diagram-emergency-dispatch--match-workflow)
+   - [6. UML Component and Package Architecture](#6-uml-component-and-package-architecture)
+5. [Entity-Relationship (ER) Diagram and DBMS Foundations](#entity-relationship-er-diagram-and-dbms-foundations)
+6. [End-to-End Business Processes](#end-to-end-business-processes)
    - [1. User Onboarding and Role Segregation](#1-user-onboarding-and-role-segregation)
    - [2. Hospital Blood Bank Stock Management](#2-hospital-blood-bank-stock-management)
    - [3. Emergency Request Triage and Dispatch](#3-emergency-request-triage-and-dispatch)
    - [4. Donor Matching and Response Workflow](#4-donor-matching-and-response-workflow)
    - [5. Administrative Oversight and Moderation](#5-administrative-oversight-and-moderation)
-6. [Complete RESTful API Specification](#complete-restful-api-specification)
-7. [Database Schema and Indexing Strategy](#database-schema-and-indexing-strategy)
-8. [Blood Compatibility Reference Matrix](#blood-compatibility-reference-matrix)
-9. [Installation and Setup Guide](#installation-and-setup-guide)
+7. [Complete RESTful API Specification](#complete-restful-api-specification)
+8. [Database Schema and Indexing Strategy](#database-schema-and-indexing-strategy)
+9. [Blood Compatibility Reference Matrix](#blood-compatibility-reference-matrix)
+10. [Installation and Setup Guide](#installation-and-setup-guide)
    - [Prerequisites](#prerequisites)
    - [Backend Configuration and Execution](#backend-configuration-and-execution)
    - [Frontend Configuration and Execution](#frontend-configuration-and-execution)
-10. [Project Directory Structure](#project-directory-structure)
-11. [Future Scope: Native Mobile Application (Final Review)](#future-scope-native-mobile-application-final-review)
-12. [License and Acknowledgments](#license-and-acknowledgments)
+11. [Project Directory Structure](#project-directory-structure)
+12. [Future Scope: Native Mobile Application (Final Review)](#future-scope-native-mobile-application-final-review)
+13. [License and Acknowledgments](#license-and-acknowledgments)
 
 ---
 
@@ -214,6 +221,377 @@ flowchart LR
     DelHosp --> DelUserDoc
     
     DelUserDoc --> Complete(["Return 200: Cascade Cleanup Successful"])
+```
+
+---
+
+## Unified Modeling Language (UML) Diagrams
+
+To provide formal software engineering rigor and object-oriented specification, LifeLink is modeled across structural, behavioral, and architectural UML perspectives.
+
+### 1. UML Class Diagram (Domain Model & Operations)
+
+The Class Diagram formalizes the object-oriented structure of LifeLink's domain entities, their encapsulation attributes (with types and visibility markers), service operations, and inter-class relationships (generalization, composition, aggregation, and associations).
+
+```mermaid
+classDiagram
+    direction TB
+
+    class User {
+        -ObjectId _id
+        +string name
+        +string email
+        -string password_hash
+        +string role
+        +Date created_at
+        +Date updated_at
+        +register(userData) Promise~User~
+        +login(credentials) Promise~Session~
+        +updateProfile(data) Promise~User~
+        +deleteCascade() Promise~void~
+    }
+
+    class Donor {
+        -ObjectId _id
+        -ObjectId user_id
+        +string blood_group
+        +string phone
+        +float latitude
+        +float longitude
+        +boolean availability
+        +string last_donation_date
+        +Date created_at
+        +Date updated_at
+        +toggleAvailability() Promise~Donor~
+        +getCompatibleRequests() Promise~List~
+        +updateLocation(lat, lng) Promise~Donor~
+        +getNearbyHospitals(radiusKm) Promise~List~
+    }
+
+    class Hospital {
+        -ObjectId _id
+        -ObjectId user_id
+        +string hospital_name
+        +string phone
+        +string emergency_contact
+        +float latitude
+        +float longitude
+        +string address
+        +Date created_at
+        +Date updated_at
+        +createBloodRequest(reqData) Promise~BloodRequest~
+        +updateStock(bloodGroup, units) Promise~BloodInventory~
+        +getStockMatrix() Promise~List~
+        +getEmergencyHistory() Promise~List~
+    }
+
+    class BloodInventory {
+        -ObjectId _id
+        -ObjectId hospital_id
+        +string blood_group
+        +int units
+        +Date updated_at
+        +setUnits(count) Promise~BloodInventory~
+        +incrementUnits(delta) Promise~BloodInventory~
+        +decrementUnits(delta) Promise~BloodInventory~
+        +checkStockThreshold(minLimit) boolean
+    }
+
+    class BloodRequest {
+        -ObjectId _id
+        -ObjectId hospital_id
+        +string blood_group
+        +int units_required
+        +string urgency
+        +string patient_name
+        +string required_by
+        +string status
+        +Date created_at
+        +Date updated_at
+        +broadcastEmergency() Promise~void~
+        +findMatchingDonors() Promise~List~
+        +transitionStatus(newStatus) Promise~BloodRequest~
+    }
+
+    class Notification {
+        -ObjectId _id
+        +string recipient_id
+        +string recipient_role
+        +string notification_type
+        +string title
+        +string message
+        +string blood_group
+        +string request_id
+        +boolean is_read
+        +Date created_at
+        +Date updated_at
+        +markAsRead() Promise~Notification~
+        +dispatchAlert() Promise~void~
+    }
+
+    class BloodCompatibilityMatrix {
+        <<utility>>
+        +getDonorCompatibleGroups(recipientType) String[]
+        +getRecipientCompatibleGroups(donorType) String[]
+        +isCompatible(donorType, recipientType) boolean
+        +calculateHaversineDistance(lat1, lon1, lat2, lon2) float
+    }
+
+    class CascadeDeletionManager {
+        <<service>>
+        +executeCascade(userId) Promise~CascadeReport~
+        +verifyReferentialIntegrity() Promise~boolean~
+    }
+
+    User <|-- Donor : specializes (role = 'donor')
+    User <|-- Hospital : specializes (role = 'hospital')
+    Hospital "1" *-- "8" BloodInventory : maintains stock
+    Hospital "1" *-- "0..*" BloodRequest : initiates
+    BloodRequest ..> BloodCompatibilityMatrix : evaluates matching
+    BloodRequest "1" ..> "0..*" Notification : generates alerts
+    Donor "1" o-- "0..*" Notification : receives
+    Hospital "1" o-- "0..*" Notification : receives
+    User ..> CascadeDeletionManager : triggers cleanup
+```
+
+---
+
+### 2. UML Use Case Diagram (Actors & Functional Scope)
+
+The Use Case Diagram captures system actor boundaries (`Donor`, `Hospital Staff`, `System Administrator`, `Unauthenticated Visitor`) and their functional capabilities across the platform.
+
+```mermaid
+flowchart LR
+    subgraph Actors ["Actors"]
+        DonorUser["fa:fa-user-heart Donor (Volunteer)"]
+        HospStaff["fa:fa-hospital Hospital Staff"]
+        AdminUser["fa:fa-user-shield System Admin"]
+        GuestUser["fa:fa-user Unauthenticated Visitor"]
+    end
+
+    subgraph LifeLink_Boundary ["System Boundary: LifeLink Blood Network"]
+        UC1(["UC-1: Register Account & Select Role"])
+        UC2(["UC-2: Authenticate (Login / Session)"])
+        UC3(["UC-3: Manage Donor Profile & GPS Coordinates"])
+        UC4(["UC-4: Toggle Donation Availability"])
+        UC5(["UC-5: View Matched Emergency Blood Requests"])
+        UC6(["UC-6: Respond & Coordinate Transfusion"])
+        UC7(["UC-7: Manage 8-Group Blood Bank Stock"])
+        UC8(["UC-8: Create & Broadcast Blood Request"])
+        UC9(["UC-9: Match Compatible Donors (ABO/Rh & Geo)"])
+        UC10(["UC-10: Dispatch Targeted Emergency Notifications"])
+        UC11(["UC-11: Update Request Status (Fulfilled / Completed)"])
+        UC12(["UC-12: System-Wide User & Hospital Governance"])
+        UC13(["UC-13: Execute Cascading Account Deletion"])
+        UC14(["UC-14: View Real-Time Analytics Dashboard"])
+    end
+
+    GuestUser --> UC1
+    GuestUser --> UC2
+
+    DonorUser --> UC2
+    DonorUser --> UC3
+    DonorUser --> UC4
+    DonorUser --> UC5
+    DonorUser --> UC6
+
+    HospStaff --> UC2
+    HospStaff --> UC7
+    HospStaff --> UC8
+    HospStaff --> UC11
+
+    AdminUser --> UC2
+    AdminUser --> UC12
+    AdminUser --> UC13
+    AdminUser --> UC14
+
+    UC8 -.->|"<<include>>"| UC9
+    UC9 -.->|"<<include>>"| UC10
+    UC8 -.->|"<<extend>>"| UC5
+    UC13 -.->|"<<include>>"| UC7
+```
+
+---
+
+### 3. UML Sequence Diagram (Emergency Triage & Notification Lifecycle)
+
+This sequence diagram details the end-to-end asynchronous and synchronous message flows when a hospital initiates an emergency blood request.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Hosp as Hospital Coordinator
+    participant UI as Presentation (React / Web UI)
+    participant Gateway as Express Gateway (CORS/Helmet)
+    participant ReqCtrl as BloodRequestController
+    participant CompatEngine as BloodCompatibilityMatrix
+    participant DB as MongoDB (WiredTiger Storage)
+    participant NotifEngine as NotificationEngine
+    actor Donor as Active Donor
+
+    Note over Hosp,Donor: Scenario: Critical Emergency Blood Request Dispatch & Matching
+    Hosp->>UI: Submit Emergency Request (Blood: 'O-', Urgency: 'emergency', Units: 3)
+    UI->>Gateway: POST /api/v1/blood-requests { hospital_id, blood_group: 'O-', urgency: 'emergency' }
+    Gateway->>ReqCtrl: createBloodRequest(req, res, next)
+    ReqCtrl->>DB: Hospital.findById(hospital_id)
+    DB-->>ReqCtrl: Valid Hospital Document (lat: 12.9716, lng: 77.5946)
+    ReqCtrl->>DB: BloodRequest.create(requestData)
+    DB-->>ReqCtrl: Saved BloodRequest (ID: req_987, status: 'searching')
+
+    ReqCtrl->>CompatEngine: getDonorCompatibleGroups('O-')
+    CompatEngine-->>ReqCtrl: ['O-'] (Universal Red Cell Donor / Strict Match)
+    
+    ReqCtrl->>DB: Donor.find({ blood_group: 'O-', availability: true })
+    DB-->>ReqCtrl: List of Matched Donors [Donor_A, Donor_B]
+    
+    ReqCtrl->>NotifEngine: dispatchEmergencyBroadcast(donors, request)
+    NotifEngine->>DB: Notification.insertMany(notifications)
+    DB-->>NotifEngine: Insert Acknowledged (2 records)
+    
+    ReqCtrl-->>UI: 201 Created { id: 'req_987', status: 'searching', matched_donors: 2 }
+    UI-->>Hosp: Display Active Triage Radar & Broadcast Status
+
+    NotifEngine-->>Donor: Push Alert: Urgent O- Request at City Hospital
+    Donor->>UI: Open Donor Radar (GET /blood-requests/donor/:donor_id)
+    UI->>Gateway: GET /api/v1/blood-requests/donor/:donor_id
+    Gateway->>ReqCtrl: getRequestsForDonor(req, res)
+    ReqCtrl->>DB: Aggregate Matching Requests + Hospital Coordinates
+    DB-->>ReqCtrl: Enriched Request List with Distance & Contact
+    ReqCtrl-->>UI: 200 OK (Enriched Requests)
+    UI-->>Donor: Show Hospital Emergency Hotline & Route Directions
+```
+
+---
+
+### 4. UML State Machine Diagram (Blood Request Statechart)
+
+The State Machine diagram models the finite state transitions and lifecycle invariant rules of a `BloodRequest`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft : Hospital prepares request parameters
+    Draft --> Searching : Emergency Broadcast Submitted (POST /blood-requests)
+
+    state Searching {
+        [*] --> Matching : Query ABO/Rh Compatibility Engine
+        Matching --> Alerting : Generate Targeted Notifications
+        Alerting --> LiveRadar : Active on Nearby Donors' Dashboards
+        LiveRadar --> LiveRadar : Periodic Polling & Heartbeat Refresh
+    }
+
+    Searching --> Fulfilled : Donor Accepts & Arrives at Facility (PUT status = 'fulfilled')
+    Searching --> Cancelled : Emergency Handled Internally / Withdrawn by Hospital (PUT status = 'cancelled')
+
+    Fulfilled --> Completed : Transfusion Complete & Stock Inventory Updated (PUT status = 'completed')
+    
+    Completed --> [*] : Request Archived in Platform History
+    Cancelled --> [*] : Request Closed and Archived
+```
+
+---
+
+### 5. UML Activity Diagram (Emergency Dispatch & Match Workflow)
+
+The Activity diagram illustrates the procedural control flow, parallel execution forks, decision gateways, and synchronization points across the platform.
+
+```mermaid
+flowchart TD
+    startNode((●)) --> Act_HospNeed[Hospital Identifies Urgent Blood Requirement]
+    Act_HospNeed --> Act_OpenPortal[Open LifeLink Hospital Emergency Portal]
+    Act_OpenPortal --> Act_FillForm[Input Blood Group, Units Required, Urgency Tier]
+    
+    Act_FillForm --> Decision_Validation{Mongoose Schema<br/>Validation Passed?}
+    
+    Decision_Validation -->|No| Act_ErrValidation[Return 400 Bad Request Payload] --> stopFail((⨂))
+    Decision_Validation -->|Yes| Act_SaveDB[Persist BloodRequest in MongoDB with status = 'searching']
+    
+    Act_SaveDB --> Fork_Parallel{{"Fork Parallel Processing"}}
+    
+    Fork_Parallel --> Act_Compat[Query ABO/Rh Compatibility Matrix]
+    Fork_Parallel --> Act_GeoIndex[Retrieve Hospital Lat/Lng Coordinates]
+    
+    Act_Compat --> Join_Parallel{{"Join Compatibility & Coordinates"}}
+    Act_GeoIndex --> Join_Parallel
+    
+    Join_Parallel --> Act_FilterDonors[Filter Donors: blood_group ∈ Compatible AND availability = true]
+    Act_FilterDonors --> Act_CreateNotifs[Generate Targeted In-App Notifications]
+    Act_CreateNotifs --> Act_Broadcast[Publish to Active Donor Match Radar]
+    
+    Act_Broadcast --> Decision_DonorAction{Donor Responds to<br/>Emergency Broadcast?}
+    
+    Decision_DonorAction -->|No / Standby| Act_KeepSearching[Maintain 'searching' Status on Active Queue] --> Act_Broadcast
+    Decision_DonorAction -->|Yes: Accept| Act_ContactHosp[Donor Contacts Emergency Desk via Phone / Hotline]
+    
+    Act_ContactHosp --> Act_Transfusion[Hospital Performs Compatibility Screening & Transfusion]
+    Act_Transfusion --> Act_UpdateReq[Update BloodRequest Status to 'completed']
+    Act_UpdateReq --> Act_UpdateInventory[Increment Blood Bank Inventory Stock Units]
+    Act_UpdateInventory --> Act_DonorCooldown[Update Donor Last Donation Date & Toggle Cooldown]
+    
+    Act_DonorCooldown --> stopSuccess((◉))
+```
+
+---
+
+### 6. UML Component and Package Architecture
+
+The Package & Component diagram illustrates structural decomposition, interface boundaries, and physical layering.
+
+```mermaid
+graph TB
+    subgraph Presentation_Package ["Package: Presentation Tier (Client Web App & Mobile)"]
+        Comp_Landing["Landing & Hero Portal"]
+        Comp_AuthUI["Authentication & Session Modals"]
+        Comp_DonorUI["Donor Dashboard & Radar Component"]
+        Comp_HospUI["Hospital Portal & Blood Matrix View"]
+        Comp_AdminUI["Admin Governance Hub"]
+        Comp_ApiClient["Axios / Fetch REST Client"]
+        
+        Comp_Landing & Comp_AuthUI & Comp_DonorUI & Comp_HospUI & Comp_AdminUI --> Comp_ApiClient
+    end
+
+    subgraph Gateway_Package ["Package: API Gateway & Security Interceptors"]
+        MW_CorsHelmet["Security Suite (CORS / Helmet Headers)"]
+        MW_BodyParse["Body Parsers & Payload Sanitizer"]
+        MW_ErrHandler["Global Application Error Handler"]
+        
+        MW_CorsHelmet --> MW_BodyParse
+    end
+
+    subgraph Application_Package ["Package: Application Business Logic (Controllers & Domain)"]
+        Ctrl_AuthPkg["AuthController"]
+        Ctrl_UserPkg["UserController (Cascade Management)"]
+        Ctrl_DonorPkg["DonorController"]
+        Ctrl_HospPkg["HospitalController"]
+        Ctrl_BankPkg["BloodBankController"]
+        Ctrl_ReqPkg["BloodRequestController"]
+        Ctrl_AnalyticsPkg["AnalyticsController"]
+        
+        Service_Compat["BloodCompatibilityService"]
+        Service_Geo["HaversineGeodesicCalculator"]
+        Service_Cascade["ReferentialCascadeEngine"]
+    end
+
+    subgraph Persistence_Package ["Package: Data Access Tier (Mongoose ODM & MongoDB)"]
+        Model_User["UserModel"]
+        Model_Donor["DonorModel"]
+        Model_Hosp["HospitalModel"]
+        Model_Stock["BloodInventoryModel"]
+        Model_Req["BloodRequestModel"]
+        Model_Notif["NotificationModel"]
+        
+        Col_MongoDB[("MongoDB Database Storage Engine (WiredTiger)")]
+    end
+
+    Comp_ApiClient -->|HTTP/REST JSON| MW_CorsHelmet
+    MW_BodyParse --> Application_Package
+    
+    Ctrl_ReqPkg --> Service_Compat
+    Ctrl_ReqPkg --> Service_Geo
+    Ctrl_UserPkg --> Service_Cascade
+    
+    Application_Package --> Persistence_Package
+    Persistence_Package -->|BSON Protocol| Col_MongoDB
+    Application_Package -.->|Exceptions / Next| MW_ErrHandler
 ```
 
 ---
