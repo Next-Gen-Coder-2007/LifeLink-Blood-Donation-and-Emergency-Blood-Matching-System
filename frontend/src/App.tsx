@@ -16,10 +16,10 @@ import {
   DonorProfilePage,
   DonationHistoryPage,
   NotificationsPage,
-  DonorSettingsPage,
   HospitalDashboard,
   HospitalBloodBank,
   HospitalBloodRequests,
+  HospitalDonorsMapPage,
   AdminLoginPage,
   AdminDashboard,
   AdminManagementPage,
@@ -73,10 +73,10 @@ function AppRoutes() {
       <RegisterModal />
 
       <Routes>
-        {/* Public Marketing Route (Navbar + Landing Page + Footer) */}
+        {/* Public Marketing Route */}
         <Route path="/" element={<PublicLayout><LandingPage /></PublicLayout>} />
 
-        {/* Modal Auth Triggers (Direct Modal Launch) */}
+        {/* Modal Auth Triggers */}
         <Route path="/login" element={<ModalRouteTrigger type="login" />} />
         <Route path="/register" element={<ModalRouteTrigger type="register" tab="donor" />} />
         <Route path="/register/donor" element={<ModalRouteTrigger type="register" tab="donor" />} />
@@ -85,25 +85,30 @@ function AppRoutes() {
         {/* Intelligent Role Redirect */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
 
-        {/* Donor Operations (AppLayout without marketing footer) */}
+        {/* Donor Operations */}
         <Route path="/donor/dashboard" element={<AppLayout><DonorDashboard /></AppLayout>} />
         <Route path="/donor/requests" element={<AppLayout><DonorBloodRequests /></AppLayout>} />
         <Route path="/donor/profile" element={<AppLayout><DonorProfilePage /></AppLayout>} />
         <Route path="/donor/history" element={<AppLayout><DonationHistoryPage /></AppLayout>} />
         <Route path="/donor/notifications" element={<AppLayout><NotificationsPage /></AppLayout>} />
-        <Route path="/donor/settings" element={<AppLayout><DonorSettingsPage /></AppLayout>} />
+        <Route path="/donor/map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
+        <Route path="/map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
 
-        {/* Hospital Operations (AppLayout without marketing footer) */}
+        {/* Hospital Operations */}
         <Route path="/hospital/dashboard" element={<AppLayout><HospitalDashboard /></AppLayout>} />
         <Route path="/hospital/blood-bank" element={<AppLayout><HospitalBloodBank /></AppLayout>} />
         <Route path="/hospital/requests" element={<AppLayout><HospitalBloodRequests /></AppLayout>} />
+        <Route path="/hospital/map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
+        <Route path="/hospital/donors-map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
 
-        {/* Admin Operations (AppLayout without marketing footer) */}
+        {/* Admin Operations */}
         <Route path="/admin/login" element={<AppLayout><AdminLoginPage /></AppLayout>} />
         <Route path="/admin/dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
         <Route path="/admin/users" element={<AppLayout><AdminManagementPage type="users" /></AppLayout>} />
         <Route path="/admin/donors" element={<AppLayout><AdminManagementPage type="donors" /></AppLayout>} />
         <Route path="/admin/hospitals" element={<AppLayout><AdminManagementPage type="hospitals" /></AppLayout>} />
+        <Route path="/admin/requests" element={<AppLayout><AdminManagementPage type="requests" /></AppLayout>} />
+        <Route path="/admin/certificates" element={<AppLayout><AdminManagementPage type="certificates" /></AppLayout>} />
 
         {/* 404 Fallback */}
         <Route path="*" element={<PublicLayout><NotFoundPage /></PublicLayout>} />
