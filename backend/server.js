@@ -6,8 +6,8 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    const server = app.listen(config.port, () => {
-      console.log(`Server listening on port ${config.port}`);
+    const server = app.listen(config.port, '0.0.0.0', () => {
+      console.log(`Server listening on port ${config.port} (0.0.0.0)`);
     });
 
     const shutdown = () => {

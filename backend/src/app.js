@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { connectDB } from './config/db.js';
 import routes from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middlewares/errorMiddleware.js';
 
@@ -17,6 +18,16 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serverless DB connection middleware (ensures DB is connected on Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use('/', routes);
 

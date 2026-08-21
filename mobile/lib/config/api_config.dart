@@ -26,9 +26,11 @@ class ApiConfig {
     baseUrl = url.replaceAll(RegExp(r'/+$'), '');
   }
 
-  // Auth Endpoints
-  static String get login => '$baseUrl/auth/login';
-  static String get register => '$baseUrl/auth/register';
+  // Auth & User Endpoints
+  static String get login => '$baseUrl/login';
+  static String get users => '$baseUrl/users';
+  static String userDonorProfile(String userId) => '$baseUrl/users/$userId/donor';
+  static String userHospitalProfile(String userId) => '$baseUrl/users/$userId/hospital';
 
   // Donor Endpoints
   static String get donors => '$baseUrl/donors';
