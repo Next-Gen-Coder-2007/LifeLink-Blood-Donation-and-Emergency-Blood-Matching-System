@@ -14,9 +14,10 @@ export const connectDB = async () => {
 
   if (!cached.promise) {
     const opts = {
+      bufferCommands: false,
       autoIndex: false, // Prevents blocking index builds during runtime connection
       maxPoolSize: 10,
-      minPoolSize: 2,
+      minPoolSize: 0,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       family: 4, // Force IPv4 to eliminate IPv6 DNS lookup stalls on Windows/Atlas
