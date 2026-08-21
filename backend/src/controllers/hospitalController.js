@@ -5,6 +5,8 @@ import { BloodInventory } from '../models/BloodInventory.js';
 import { BloodRequest } from '../models/BloodRequest.js';
 import { AppError } from '../middlewares/errorMiddleware.js';
 
+const ALL_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
 export const createHospital = async (req, res, next) => {
   try {
     const { user_id } = req.params;
@@ -74,15 +76,76 @@ export const getHospitals = async (req, res, next) => {
   }
 };
 
+export const getPublicHospitalsMap = async (req, res, next) => {
+  try {
+    const [hospitals, inventories, activeRequests] = await Promise.all([
+      Hospital.find().sort({ created_at: -1 }).lean(),
+      BloodInventory.find().lean(),
+      BloodRequest.find({ status: 'searching' }).lean(),
+    ]);
+
+    // Index inventory by hospital_id
+    const inventoryMap = {};
+    inventories.forEach((item) => {
+      const hId = item.hospital_id ? item.hospital_id.toString() : '';
+      if (!hId) return;
+      if (!inventoryMap[hId]) inventoryMap[hId] = {};
+      inventoryMap[hId][item.blood_group] = item.units;
+    });
+
+    // Index requests by hospital_id
+    const requestMap = {};
+    activeRequests.forEach((reqItem) => {
+      const hId = reqItem.hospital_id ? reqItem.hospital_id.toString() : '';
+      if (!hId) return;
+      if (!requestMap[hId]) requestMap[hId] = [];
+      requestMap[hId].push(reqItem.blood_group);
+    });
+
+    const response = hospitals.map((h) => {
+      const hId = h._id.toString();
+      const hospitalStock = inventoryMap[hId] || {};
+      const stockByGroup = {};
+      let totalUnits = 0;
+
+      ALL_BLOOD_GROUPS.forEach((bg) => {
+        const units = hospitalStock[bg] || 0;
+        stockByGroup[bg] = units;
+        totalUnits += units;
+      });
+
+      const neededGroups = requestMap[hId] || [];
+
+      return {
+        id: hId,
+        hospital_name: h.hospital_name,
+        phone: h.phone,
+        emergency_contact: h.emergency_contact,
+        latitude: h.latitude || 0,
+        longitude: h.longitude || 0,
+        address: h.address,
+        total_units: totalUnits,
+        stock_by_group: stockByGroup,
+        searching_requests_count: neededGroups.length,
+        needed_groups: neededGroups,
+      };
+    });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getHospitalByUserId = async (req, res, next) => {
   try {
     const { user_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      throw new AppError('Invalid user ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(user_id)
+      ? { user_id: new mongoose.Types.ObjectId(user_id) }
+      : { user_id: String(user_id) };
 
-    const hospital = await Hospital.findOne({ user_id }).lean();
+    const hospital = await Hospital.findOne(query).lean();
     if (!hospital) {
       throw new AppError('Hospital not found', 404);
     }
