@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,5 +55,70 @@
 
   .w-4\.5 {
     width: 1.125rem;
+  }
+}
+
+/* Custom Radar & Map Styles */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 10;
+  border-radius: 1rem;
+  width: 100%;
+  height: 100%;
+}
+
+.leaflet-tile-pane {
+  z-index: 2;
+}
+
+.leaflet-tile-container img {
+  box-shadow: none !important;
+}
+
+.custom-donor-icon, .custom-hospital-icon, .custom-public-hospital-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+.radar-pulse {
+  animation: radar-wave 2.5s infinite cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes radar-wave {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-shadow: none !important;
   }
 }
