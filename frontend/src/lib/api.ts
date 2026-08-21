@@ -1,7 +1,7 @@
 export const API_BASE = (
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||
-  "http://127.0.0.1:8000"
+  (import.meta.env.PROD ? "" : "http://localhost:8000")
 ).replace(/\/$/, "");
 
 export interface UserSession {
@@ -19,19 +19,28 @@ export interface UserSession {
 export const getSession = (): UserSession | null => {
   try {
     const raw = localStorage.getItem("user") || localStorage.getItem("lifelink_session");
-    if (!raw) return null;
+    if (!raw || raw === "null" || raw === "undefined" || raw === "{}") return null;
     const parsed = JSON.parse(raw);
-    if (parsed.user) return parsed as UserSession;
-    if (parsed.id || parsed.user_id) {
+    if (!parsed || typeof parsed !== "object") return null;
+
+    if (
+      parsed.user &&
+      typeof parsed.user === "object" &&
+      (parsed.user.id || parsed.user.email || (parsed.user.name && parsed.user.name !== "User"))
+    ) {
+      return parsed as UserSession;
+    }
+    if (parsed.id || parsed.user_id || parsed.email) {
       return {
         user: {
-          id: parsed.id || parsed.user_id,
+          id: String(parsed.id || parsed.user_id || ""),
           name: parsed.name || "User",
           email: parsed.email || "",
-          role: parsed.role || "donor",
+          role: (parsed.role || "donor") as "donor" | "hospital" | "admin",
           profileId: parsed.profile_id || parsed.profileId,
           blood_group: parsed.blood_group,
         },
+        token: parsed.token || "session-active",
       };
     }
     return null;
@@ -71,90 +80,39 @@ export const setSession = (data: {
 export const clearSession = () => {
   localStorage.removeItem("user");
   localStorage.removeItem("lifelink_session");
-  memoryCache.clear();
   window.dispatchEvent(new Event("storage"));
 };
 
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
+export async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : API_BASE
+    ? `${API_BASE}${endpoint}`
+    : endpoint;
 
-const memoryCache = new Map<string, CacheEntry<unknown>>();
-const inFlightRequests = new Map<string, Promise<unknown>>();
-const DEFAULT_CACHE_TTL = 15000; // 15 seconds client cache
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
 
-export interface ApiRequestOptions extends RequestInit {
-  cacheTTL?: number;
-  forceRefresh?: boolean;
-}
+  const response = await fetch(url, { ...options, headers });
+  const data = await response.json().catch(() => ({}));
 
-export async function request<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint}`;
-  const method = (options.method || "GET").toUpperCase();
-
-  // Mutations invalidate the in-memory cache so subsequent fetches get fresh data
-  if (method !== "GET") {
-    memoryCache.clear();
-    const headers = {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    };
-    const response = await fetch(url, { ...options, headers });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.detail || data.message || `Request failed with status ${response.status}`);
-    }
-    return data as T;
+  if (!response.ok) {
+    throw new Error(data.detail || data.message || `Request failed with status ${response.status}`);
   }
 
-  // Check in-memory cache for GET requests
-  const cacheTTL = options.cacheTTL ?? DEFAULT_CACHE_TTL;
-  const now = Date.now();
-  if (!options.forceRefresh && memoryCache.has(endpoint)) {
-    const entry = memoryCache.get(endpoint)!;
-    if (now - entry.timestamp < cacheTTL) {
-      return entry.data as T;
-    }
-  }
-
-  // Deduplicate identical in-flight GET requests
-  if (inFlightRequests.has(endpoint)) {
-    return inFlightRequests.get(endpoint) as Promise<T>;
-  }
-
-  const fetchPromise = (async () => {
-    try {
-      const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      };
-      const response = await fetch(url, { ...options, headers });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.detail || data.message || `Request failed with status ${response.status}`);
-      }
-
-      memoryCache.set(endpoint, { data, timestamp: Date.now() });
-      return data as T;
-    } finally {
-      inFlightRequests.delete(endpoint);
-    }
-  })();
-
-  inFlightRequests.set(endpoint, fetchPromise);
-  return fetchPromise;
+  return data as T;
 }
 
 export const api = {
-  get: <T>(endpoint: string, options?: ApiRequestOptions) => request<T>(endpoint, { ...options, method: "GET" }),
-  post: <T>(endpoint: string, body?: unknown, options?: ApiRequestOptions) =>
+  get: <T>(endpoint: string, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: "GET" }),
+  post: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "POST", body: body ? JSON.stringify(body) : undefined }),
-  put: <T>(endpoint: string, body?: unknown, options?: ApiRequestOptions) =>
+  put: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "PUT", body: body ? JSON.stringify(body) : undefined }),
-  delete: <T>(endpoint: string, options?: ApiRequestOptions) =>
+  delete: <T>(endpoint: string, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "DELETE" }),
-  invalidateCache: () => memoryCache.clear(),
+  invalidateCache: () => {},
 };
