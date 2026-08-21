@@ -11,6 +11,7 @@ export { DonorSettingsPage } from "./donor/DonorSettingsPage";
 export { HospitalDashboard } from "./hospital/HospitalDashboard";
 export { HospitalBloodBank } from "./hospital/HospitalBloodBank";
 export { HospitalBloodRequests } from "./hospital/HospitalBloodRequests";
+export { HospitalDonorsMapPage } from "./hospital/HospitalDonorsMapPage";
 
 export { AdminLoginPage } from "./admin/AdminLoginPage";
 export { AdminDashboard } from "./admin/AdminDashboard";

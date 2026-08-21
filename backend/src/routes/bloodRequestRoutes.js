@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   createBloodRequest,
+  getAllBloodRequests,
   getHospitalBloodRequests,
   getDonorBloodRequests,
   getBloodRequestById,
@@ -11,6 +12,7 @@ import {
 const router = Router();
 
 router.route('/')
+  .get(getAllBloodRequests)
   .post(createBloodRequest);
 
 router.get('/hospital/:hospital_id', getHospitalBloodRequests);

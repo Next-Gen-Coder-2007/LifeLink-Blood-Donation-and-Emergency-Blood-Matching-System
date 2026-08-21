@@ -7,7 +7,9 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { DataTable, type DataRow } from "@/components/admin/DataTable";
 
-export function AdminManagementPage({ type }: { type: "users" | "donors" | "hospitals" }) {
+export type AdminManagementType = "users" | "donors" | "hospitals" | "requests" | "certificates";
+
+export function AdminManagementPage({ type }: { type: AdminManagementType }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const session = getSession();
@@ -15,13 +17,30 @@ export function AdminManagementPage({ type }: { type: "users" | "donors" | "hosp
   const [items, setItems] = useState<DataRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getEndpoint = () => {
+    switch (type) {
+      case "users":
+        return "/users";
+      case "donors":
+        return "/donors";
+      case "hospitals":
+        return "/hospitals";
+      case "requests":
+        return "/blood-requests";
+      case "certificates":
+        return "/donation-history";
+      default:
+        return `/${type}`;
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.get<DataRow[]>(`/${type}`);
+      const data = await api.get<DataRow[]>(getEndpoint());
       setItems(data);
     } catch {
-      showToast(`Failed to load ${type}`, "error");
+      showToast(`Failed to load ${type} records`, "error");
     } finally {
       setLoading(false);
     }
@@ -36,20 +55,31 @@ export function AdminManagementPage({ type }: { type: "users" | "donors" | "hosp
   }, [type, session, navigate]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}? Cascade deletions will apply.`)) return;
+    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}? Cascade actions may apply.`)) return;
     try {
-      await api.delete(`/${type}/${id}`);
+      await api.delete(`${getEndpoint()}/${id}`);
       setItems((prev) => prev.filter((item) => item.id !== id));
-      showToast(`${type.slice(0, -1)} deleted successfully`);
+      showToast(`${type.slice(0, -1)} record deleted successfully`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Deletion failed", "error");
     }
   };
 
   const getTitle = () => {
-    if (type === "users") return "User Accounts Management";
-    if (type === "donors") return "Registered Donors Directory";
-    return "Hospital Network Directory";
+    switch (type) {
+      case "users":
+        return "User Accounts Management";
+      case "donors":
+        return "Registered Donors Directory";
+      case "hospitals":
+        return "Hospital Facilities Network";
+      case "requests":
+        return "Emergency Blood Broadcasts Audit";
+      case "certificates":
+        return "Verified Donation Certificates Ledger";
+      default:
+        return `${type} Management`;
+    }
   };
 
   return (
@@ -57,15 +87,15 @@ export function AdminManagementPage({ type }: { type: "users" | "donors" | "hosp
       <PageHeader
         backTo="/admin/dashboard"
         title={getTitle()}
-        description={`Managing ${items.length} records in MongoDB database`}
+        description={`Managing ${items.length} live records in MongoDB database`}
         action={
           <button
             type="button"
             onClick={loadData}
             disabled={loading}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-2xs transition cursor-pointer"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
             Refresh
           </button>
         }
@@ -75,7 +105,7 @@ export function AdminManagementPage({ type }: { type: "users" | "donors" | "hosp
         <CardHeader>
           <div>
             <CardTitle>{type.toUpperCase()} Record Table</CardTitle>
-            <CardDescription>Search, audit, and manage active system records</CardDescription>
+            <CardDescription>Search, inspect, and manage system database records</CardDescription>
           </div>
         </CardHeader>
 

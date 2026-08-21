@@ -25,23 +25,24 @@
    - [API Request and Middleware Pipeline](#api-request-and-middleware-pipeline)
    - [Emergency Blood Matching Flowchart](#emergency-blood-matching-flowchart)
    - [Referential Integrity and Cascade Deletion Lifecycle](#referential-integrity-and-cascade-deletion-lifecycle)
-4. [Entity-Relationship (ER) Diagram](#entity-relationship-er-diagram)
-5. [End-to-End Business Processes](#end-to-end-business-processes)
+4. [Unified Modeling Language (UML) Class Diagram](#unified-modeling-language-uml-class-diagram)
+5. [Entity-Relationship (ER) Diagram and DBMS Foundations](#entity-relationship-er-diagram-and-dbms-foundations)
+6. [End-to-End Business Processes](#end-to-end-business-processes)
    - [1. User Onboarding and Role Segregation](#1-user-onboarding-and-role-segregation)
    - [2. Hospital Blood Bank Stock Management](#2-hospital-blood-bank-stock-management)
    - [3. Emergency Request Triage and Dispatch](#3-emergency-request-triage-and-dispatch)
    - [4. Donor Matching and Response Workflow](#4-donor-matching-and-response-workflow)
    - [5. Administrative Oversight and Moderation](#5-administrative-oversight-and-moderation)
-6. [Complete RESTful API Specification](#complete-restful-api-specification)
-7. [Database Schema and Indexing Strategy](#database-schema-and-indexing-strategy)
-8. [Blood Compatibility Reference Matrix](#blood-compatibility-reference-matrix)
-9. [Installation and Setup Guide](#installation-and-setup-guide)
+7. [Complete RESTful API Specification](#complete-restful-api-specification)
+8. [Database Schema and Indexing Strategy](#database-schema-and-indexing-strategy)
+9. [Blood Compatibility Reference Matrix](#blood-compatibility-reference-matrix)
+10. [Installation and Setup Guide](#installation-and-setup-guide)
    - [Prerequisites](#prerequisites)
    - [Backend Configuration and Execution](#backend-configuration-and-execution)
    - [Frontend Configuration and Execution](#frontend-configuration-and-execution)
-10. [Project Directory Structure](#project-directory-structure)
-11. [Future Scope: Native Mobile Application (Final Review)](#future-scope-native-mobile-application-final-review)
-12. [License and Acknowledgments](#license-and-acknowledgments)
+11. [Project Directory Structure](#project-directory-structure)
+12. [Future Scope: Native Mobile Application (Final Review)](#future-scope-native-mobile-application-final-review)
+13. [License and Acknowledgments](#license-and-acknowledgments)
 
 ---
 
@@ -214,6 +215,133 @@ flowchart LR
     DelHosp --> DelUserDoc
     
     DelUserDoc --> Complete(["Return 200: Cascade Cleanup Successful"])
+```
+
+---
+
+## Unified Modeling Language (UML) Class Diagram
+
+The following comprehensive UML Class Diagram formalizes the object-oriented structure of LifeLink's domain entities, encapsulation attributes (with types and visibility markers), core controller operations, and system-level relationships (generalization, composition, aggregation, and associations with cardinalities).
+
+```mermaid
+classDiagram
+    direction TB
+
+    class User {
+        -ObjectId _id
+        +string name
+        +string email
+        -string password_hash
+        +string role
+        +Date created_at
+        +Date updated_at
+        +register(userData) Promise~User~
+        +login(credentials) Promise~Session~
+        +updateProfile(data) Promise~User~
+        +deleteCascade() Promise~void~
+    }
+
+    class Donor {
+        -ObjectId _id
+        -ObjectId user_id
+        +string blood_group
+        +string phone
+        +float latitude
+        +float longitude
+        +boolean availability
+        +string last_donation_date
+        +Date created_at
+        +Date updated_at
+        +toggleAvailability() Promise~Donor~
+        +getCompatibleRequests() Promise~List~
+        +updateLocation(lat, lng) Promise~Donor~
+        +getNearbyHospitals(radiusKm) Promise~List~
+    }
+
+    class Hospital {
+        -ObjectId _id
+        -ObjectId user_id
+        +string hospital_name
+        +string phone
+        +string emergency_contact
+        +float latitude
+        +float longitude
+        +string address
+        +Date created_at
+        +Date updated_at
+        +createBloodRequest(reqData) Promise~BloodRequest~
+        +updateStock(bloodGroup, units) Promise~BloodInventory~
+        +getStockMatrix() Promise~List~
+        +getEmergencyHistory() Promise~List~
+    }
+
+    class BloodInventory {
+        -ObjectId _id
+        -ObjectId hospital_id
+        +string blood_group
+        +int units
+        +Date updated_at
+        +setUnits(count) Promise~BloodInventory~
+        +incrementUnits(delta) Promise~BloodInventory~
+        +decrementUnits(delta) Promise~BloodInventory~
+        +checkStockThreshold(minLimit) boolean
+    }
+
+    class BloodRequest {
+        -ObjectId _id
+        -ObjectId hospital_id
+        +string blood_group
+        +int units_required
+        +string urgency
+        +string patient_name
+        +string required_by
+        +string status
+        +Date created_at
+        +Date updated_at
+        +broadcastEmergency() Promise~void~
+        +findMatchingDonors() Promise~List~
+        +transitionStatus(newStatus) Promise~BloodRequest~
+    }
+
+    class Notification {
+        -ObjectId _id
+        +string recipient_id
+        +string recipient_role
+        +string notification_type
+        +string title
+        +string message
+        +string blood_group
+        +string request_id
+        +boolean is_read
+        +Date created_at
+        +Date updated_at
+        +markAsRead() Promise~Notification~
+        +dispatchAlert() Promise~void~
+    }
+
+    class BloodCompatibilityMatrix {
+        <<utility>>
+        +getDonorCompatibleGroups(recipientType) String[]
+        +getRecipientCompatibleGroups(donorType) String[]
+        +isCompatible(donorType, recipientType) boolean
+        +calculateHaversineDistance(lat1, lon1, lat2, lon2) float
+    }
+
+    class CascadeDeletionManager {
+        <<service>>
+        +executeCascade(userId) Promise~CascadeReport~
+        +verifyReferentialIntegrity() Promise~boolean~
+    }
+
+    User <|-- Donor : specializes (role = 'donor')
+    User <|-- Hospital : specializes (role = 'hospital')
+    Hospital "1" *-- "8" BloodInventory : maintains stock
+    Hospital "1" *-- "0..*" BloodRequest : initiates
+    BloodRequest ..> BloodCompatibilityMatrix : evaluates matching
+    BloodRequest "1" ..> "0..*" Notification : generates alerts
+    Donor "1" o-- "0..*" Notification : receives
+    Hospital "1" o-- "0..*" Notification : receives
+    User ..> CascadeDeletionManager : triggers cleanup
 ```
 
 ---

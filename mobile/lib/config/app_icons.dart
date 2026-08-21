@@ -1,0 +1,42 @@
+import 'package:flutter/material.dart';
+
+class LucideIcons {
+  static const IconData droplet = Icons.water_drop_rounded;
+  static const IconData droplets = Icons.bloodtype_rounded;
+  static const IconData heart = Icons.favorite_rounded;
+  static const IconData heartHandshake = Icons.volunteer_activism_rounded;
+  static const IconData building2 = Icons.local_hospital_rounded;
+  static const IconData phone = Icons.phone_rounded;
+  static const IconData phoneCall = Icons.phone_in_talk_rounded;
+  static const IconData mapPin = Icons.location_on_rounded;
+  static const IconData navigation = Icons.navigation_rounded;
+  static const IconData compass = Icons.explore_rounded;
+  static const IconData bell = Icons.notifications_rounded;
+  static const IconData bellOff = Icons.notifications_off_rounded;
+  static const IconData award = Icons.verified_rounded;
+  static const IconData layers = Icons.inventory_2_rounded;
+  static const IconData radio = Icons.sensors_rounded;
+  static const IconData radar = Icons.radar_rounded;
+  static const IconData checkCircle = Icons.check_circle_rounded;
+  static const IconData checkCircle2 = Icons.check_circle_rounded;
+  static const IconData alertTriangle = Icons.warning_amber_rounded;
+  static const IconData alertCircle = Icons.error_outline_rounded;
+  static const IconData clock = Icons.access_time_rounded;
+  static const IconData calendar = Icons.calendar_today_rounded;
+  static const IconData user = Icons.person_rounded;
+  static const IconData mail = Icons.email_rounded;
+  static const IconData lock = Icons.lock_outline_rounded;
+  static const IconData eye = Icons.visibility_rounded;
+  static const IconData eyeOff = Icons.visibility_off_rounded;
+  static const IconData search = Icons.search_rounded;
+  static const IconData plus = Icons.add_rounded;
+  static const IconData plusCircle = Icons.add_circle_outline_rounded;
+  static const IconData minus = Icons.remove_rounded;
+  static const IconData x = Icons.close_rounded;
+  static const IconData logOut = Icons.logout_rounded;
+  static const IconData moon = Icons.nightlight_round;
+  static const IconData activity = Icons.health_and_safety_rounded;
+  static const IconData layoutDashboard = Icons.dashboard_rounded;
+  static const IconData gitPullRequest = Icons.alt_route_rounded;
+  static const IconData send = Icons.send_rounded;
+}

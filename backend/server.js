@@ -1,5 +1,5 @@
 import app from './src/app.js';
-import { connectDB, initIndexes } from './src/config/db.js';
+import { connectDB } from './src/config/db.js';
 import { config } from './src/config/env.js';
 
 const startServer = async () => {
@@ -10,9 +10,6 @@ const startServer = async () => {
       console.log(`Server listening on port ${config.port}`);
     });
 
-    // Verify / build indexes asynchronously in background without blocking server startup
-    initIndexes().catch(() => {});
-
     const shutdown = () => {
       server.close(() => {
         process.exit(0);
@@ -22,6 +19,7 @@ const startServer = async () => {
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
   } catch (error) {
+    console.error('Server startup error:', error.message);
     process.exit(1);
   }
 };

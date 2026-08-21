@@ -45,7 +45,7 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
-notificationSchema.index({ recipient_id: 1, created_at: -1 });
+notificationSchema.index({ recipient_id: 1, is_read: 1 });
 
 notificationSchema.set('toJSON', {
   transform: (doc, ret) => {
