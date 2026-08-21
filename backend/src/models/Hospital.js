@@ -26,12 +26,10 @@ const hospitalSchema = new mongoose.Schema(
     },
     latitude: {
       type: Number,
-      required: [true, 'Latitude is required'],
       default: 0.0,
     },
     longitude: {
       type: Number,
-      required: [true, 'Longitude is required'],
       default: 0.0,
     },
     address: {
@@ -45,9 +43,6 @@ const hospitalSchema = new mongoose.Schema(
     versionKey: false,
   }
 );
-
-hospitalSchema.index({ latitude: 1, longitude: 1 });
-hospitalSchema.index({ created_at: -1 });
 
 hospitalSchema.set('toJSON', {
   transform: (doc, ret) => {
