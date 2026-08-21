@@ -3,26 +3,32 @@ import { Donor } from '../models/Donor.js';
 import { Hospital } from '../models/Hospital.js';
 import { BloodRequest } from '../models/BloodRequest.js';
 import { BloodInventory } from '../models/BloodInventory.js';
+import { DonationHistory } from '../models/DonationHistory.js';
+import { DonationPledge } from '../models/DonationPledge.js';
 
 const ALL_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-let cachedStats = null;
-let lastCacheTime = 0;
-const CACHE_TTL_MS = 5000; // 5 seconds cache
-
 export const getPlatformStats = async (req, res, next) => {
   try {
-    const now = Date.now();
-    if (cachedStats && now - lastCacheTime < CACHE_TTL_MS) {
-      return res.status(200).json(cachedStats);
-    }
-
-    const [totalUsers, totalDonors, totalHospitals, totalRequests, activeRequests, inventoryStock] = await Promise.all([
-      User.countDocuments(),
-      Donor.countDocuments(),
-      Hospital.countDocuments(),
-      BloodRequest.countDocuments(),
-      BloodRequest.countDocuments({ status: 'searching' }),
+    const [
+      totalUsers,
+      totalDonors,
+      totalHospitals,
+      totalRequests,
+      requestStatusGroups,
+      totalDonations,
+      totalPledges,
+      inventoryStock,
+    ] = await Promise.all([
+      User.estimatedDocumentCount(),
+      Donor.estimatedDocumentCount(),
+      Hospital.estimatedDocumentCount(),
+      BloodRequest.estimatedDocumentCount(),
+      BloodRequest.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      DonationHistory.estimatedDocumentCount(),
+      DonationPledge.estimatedDocumentCount(),
       BloodInventory.aggregate([
         {
           $group: {
@@ -33,7 +39,15 @@ export const getPlatformStats = async (req, res, next) => {
       ]),
     ]);
 
+    let activeRequests = 0;
+    let fulfilledRequests = 0;
+    requestStatusGroups.forEach((g) => {
+      if (g._id === 'searching') activeRequests = g.count;
+      if (g._id === 'fulfilled' || g._id === 'completed') fulfilledRequests += g.count;
+    });
+
     const stockByGroup = {};
+    let totalStockUnits = 0;
     ALL_BLOOD_GROUPS.forEach((bg) => {
       stockByGroup[bg] = 0;
     });
@@ -41,22 +55,22 @@ export const getPlatformStats = async (req, res, next) => {
     inventoryStock.forEach((item) => {
       if (item._id) {
         stockByGroup[item._id] = item.totalUnits;
+        totalStockUnits += item.totalUnits;
       }
     });
 
-    const result = {
+    return res.status(200).json({
       totalUsers,
       totalDonors,
       totalHospitals,
       totalRequests,
       activeRequests,
+      fulfilledRequests,
+      totalDonations,
+      totalPledges,
+      totalStockUnits,
       stockByGroup,
-    };
-
-    cachedStats = result;
-    lastCacheTime = now;
-
-    return res.status(200).json(result);
+    });
   } catch (error) {
     next(error);
   }
