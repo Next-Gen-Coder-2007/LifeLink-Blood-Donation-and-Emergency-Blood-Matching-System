@@ -127,28 +127,29 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await NetworkClient.post(ApiConfig.register, body: {
+      // 1. Create base user
+      final userRes = await NetworkClient.post(ApiConfig.users, body: {
         'name': name.trim(),
         'email': email.trim(),
         'password': password,
         'role': 'donor',
-        'blood_group': bloodGroup,
-        'phone': phone.trim(),
-        'address': address.trim(),
-        'latitude': _userLat,
-        'longitude': _userLng,
       });
 
-      if (res is Map) {
-        final userData = res['user'] ?? res;
-        _token = res['token']?.toString() ?? 'active-session';
-        _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+      if (userRes is Map && userRes['user_id'] != null) {
+        final userId = userRes['user_id'].toString();
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
-        await prefs.setString('auth_user', jsonEncode(_user!.toJson()));
+        // 2. Create donor profile
+        await NetworkClient.post(ApiConfig.userDonorProfile(userId), body: {
+          'blood_group': bloodGroup,
+          'phone': phone.trim(),
+          'address': address.trim(),
+          'latitude': _userLat,
+          'longitude': _userLng,
+          'availability': true,
+        });
 
-        await _fetchRoleProfile();
+        // 3. Authenticate session
+        await login(email, password);
       }
     } finally {
       _isLoading = false;
@@ -168,28 +169,29 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await NetworkClient.post(ApiConfig.register, body: {
+      // 1. Create base user
+      final userRes = await NetworkClient.post(ApiConfig.users, body: {
         'name': name.trim(),
         'email': email.trim(),
         'password': password,
         'role': 'hospital',
-        'phone': phone.trim(),
-        'emergency_contact': emergencyContact.trim(),
-        'address': address.trim(),
-        'latitude': _userLat,
-        'longitude': _userLng,
       });
 
-      if (res is Map) {
-        final userData = res['user'] ?? res;
-        _token = res['token']?.toString() ?? 'active-session';
-        _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+      if (userRes is Map && userRes['user_id'] != null) {
+        final userId = userRes['user_id'].toString();
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
-        await prefs.setString('auth_user', jsonEncode(_user!.toJson()));
+        // 2. Create hospital profile
+        await NetworkClient.post(ApiConfig.userHospitalProfile(userId), body: {
+          'hospital_name': name.trim(),
+          'phone': phone.trim(),
+          'emergency_contact': emergencyContact.trim(),
+          'address': address.trim(),
+          'latitude': _userLat,
+          'longitude': _userLng,
+        });
 
-        await _fetchRoleProfile();
+        // 3. Authenticate session
+        await login(email, password);
       }
     } finally {
       _isLoading = false;

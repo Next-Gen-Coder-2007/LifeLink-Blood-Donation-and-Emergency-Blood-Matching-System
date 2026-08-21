@@ -22,7 +22,12 @@ router.get('/', (req, res) => {
   });
 });
 
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 router.use('/', authRoutes);
+router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/donors', donorRoutes);
 router.use('/hospitals', hospitalRoutes);

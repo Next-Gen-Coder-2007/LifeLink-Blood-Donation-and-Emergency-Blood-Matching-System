@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NetworkClient {
-  static const Duration timeoutDuration = Duration(seconds: 12);
+  static const Duration timeoutDuration = Duration(seconds: 45);
 
   static Future<Map<String, String>> _getHeaders({Map<String, String>? extraHeaders}) async {
     final prefs = await SharedPreferences.getInstance();

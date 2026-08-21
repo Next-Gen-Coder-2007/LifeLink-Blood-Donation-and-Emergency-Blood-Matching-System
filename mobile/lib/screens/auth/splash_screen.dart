@@ -46,15 +46,30 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              height: 72,
-              width: 72,
+              height: 84,
+              width: 84,
               decoration: BoxDecoration(
-                color: AppTheme.primaryRedLight,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: const Color(0xFFFECACA), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryRed.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: const Center(
-                child: Icon(LucideIcons.droplet, color: AppTheme.primaryRed, size: 36),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Image.asset(
+                  'assets/icon/app_logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppTheme.primaryRedLight,
+                    child: const Center(
+                      child: Icon(LucideIcons.droplet, color: AppTheme.primaryRed, size: 36),
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 18),
