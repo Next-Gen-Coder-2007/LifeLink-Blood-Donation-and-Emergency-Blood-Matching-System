@@ -48,13 +48,26 @@ export function HospitalBloodRequests() {
       return;
     }
 
-    api.get<{ id: string; user_id: string }[]>("/hospitals").then((hospitals) => {
-      const current = hospitals.find((h) => String(h.user_id) === String(session.user.id));
-      if (current) {
-        setHospitalId(current.id);
-        loadRequests(current.id);
+    const init = async () => {
+      try {
+        let current: { id: string; user_id: string } | null = null;
+        try {
+          current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
+        } catch {
+          const hospitals = await api.get<{ id: string; user_id: string }[]>("/hospitals");
+          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
+        }
+
+        if (current) {
+          setHospitalId(current.id);
+          loadRequests(current.id);
+        }
+      } catch {
+        setLoading(false);
       }
-    });
+    };
+
+    init();
   }, [session, navigate]);
 
   const handleCreate = async (formData: {

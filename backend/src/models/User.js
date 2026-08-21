@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.index({ created_at: -1 });
+
 userSchema.set('toJSON', {
   transform: (doc, ret) => {
     ret.id = ret._id.toString();

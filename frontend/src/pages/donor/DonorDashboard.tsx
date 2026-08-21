@@ -37,12 +37,35 @@ export function DonorDashboard() {
 
     const loadDonorData = async () => {
       try {
-        const donors = await api.get<DonorData[]>("/donors");
-        const myProfile = donors.find((d) => String(d.user_id) === String(session.user.id));
+        let myProfile: DonorData | null = null;
+        try {
+          myProfile = await api.get<DonorData>(`/donors/user/${session.user.id}`);
+        } catch {
+          // Fallback if needed
+          const donors = await api.get<DonorData[]>("/donors");
+          myProfile = donors.find((d) => String(d.user_id) === String(session.user.id)) || null;
+        }
+
         if (myProfile) {
           setDonor(myProfile);
           const reqs = await api.get<DonorRequestItem[]>(`/blood-requests/donor/${myProfile.id}`);
           setMatchingRequests(reqs.filter((r) => r.status === "searching"));
+
+          // Live donor dynamic location tracking
+          if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const lat = Number(pos.coords.latitude.toFixed(5));
+                const lng = Number(pos.coords.longitude.toFixed(5));
+                if (myProfile && (Math.abs(lat - (myProfile.latitude || 0)) > 0.001 || Math.abs(lng - (myProfile.longitude || 0)) > 0.001)) {
+                  api.put(`/donors/${myProfile.id}`, { latitude: lat, longitude: lng }).catch(() => {});
+                  setDonor((prev) => (prev ? { ...prev, latitude: lat, longitude: lng } : prev));
+                }
+              },
+              () => {},
+              { enableHighAccuracy: true, timeout: 5000 }
+            );
+          }
         }
       } catch {
         showToast("Failed to load donor data", "error");

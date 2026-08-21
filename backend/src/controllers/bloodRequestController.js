@@ -70,16 +70,11 @@ export const getHospitalBloodRequests = async (req, res, next) => {
       throw new AppError('Invalid hospital ID', 400);
     }
 
-    const hospital = await Hospital.findById(hospital_id);
-    if (!hospital) {
-      throw new AppError('Hospital not found', 404);
-    }
-
-    const requests = await BloodRequest.find({ hospital_id }).sort({ created_at: -1 });
+    const requests = await BloodRequest.find({ hospital_id }).sort({ created_at: -1 }).lean();
 
     const formatted = requests.map((r) => ({
       id: r._id.toString(),
-      hospital_id: r.hospital_id.toString(),
+      hospital_id: r.hospital_id ? r.hospital_id.toString() : '',
       blood_group: r.blood_group,
       units_required: r.units_required,
       urgency: r.urgency,
@@ -103,7 +98,7 @@ export const getDonorBloodRequests = async (req, res, next) => {
       throw new AppError('Invalid donor ID', 400);
     }
 
-    const donor = await Donor.findById(donor_id);
+    const donor = await Donor.findById(donor_id).lean();
     if (!donor) {
       throw new AppError('Donor not found', 404);
     }
@@ -114,25 +109,22 @@ export const getDonorBloodRequests = async (req, res, next) => {
     }
 
     const requests = await BloodRequest.find({ blood_group: donorBloodGroup })
-      .populate('hospital_id')
-      .sort({ created_at: -1 });
+      .populate({
+        path: 'hospital_id',
+        select: 'hospital_name phone emergency_contact address latitude longitude',
+      })
+      .sort({ created_at: -1 })
+      .lean();
 
     const response = [];
 
     for (const reqItem of requests) {
-      let hospital = reqItem.hospital_id;
-
-      if (!hospital || !hospital.hospital_name) {
-        if (mongoose.Types.ObjectId.isValid(reqItem.hospital_id)) {
-          hospital = await Hospital.findById(reqItem.hospital_id);
-        }
-      }
-
+      const hospital = reqItem.hospital_id;
       if (!hospital) continue;
 
       response.push({
         id: reqItem._id.toString(),
-        hospital_id: hospital._id ? hospital._id.toString() : reqItem.hospital_id.toString(),
+        hospital_id: hospital._id ? hospital._id.toString() : String(reqItem.hospital_id || ''),
         hospital_name: hospital.hospital_name || '',
         hospital_phone: hospital.phone || '',
         emergency_contact: hospital.emergency_contact || '',
@@ -163,14 +155,14 @@ export const getBloodRequestById = async (req, res, next) => {
       throw new AppError('Invalid request ID', 400);
     }
 
-    const item = await BloodRequest.findById(request_id);
+    const item = await BloodRequest.findById(request_id).lean();
     if (!item) {
       throw new AppError('Blood request not found', 404);
     }
 
     return res.status(200).json({
       id: item._id.toString(),
-      hospital_id: item.hospital_id.toString(),
+      hospital_id: item.hospital_id ? item.hospital_id.toString() : '',
       blood_group: item.blood_group,
       units_required: item.units_required,
       urgency: item.urgency,

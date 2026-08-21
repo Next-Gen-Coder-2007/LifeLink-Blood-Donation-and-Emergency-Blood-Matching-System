@@ -29,8 +29,14 @@ export function HospitalBloodBank() {
 
     const loadInventory = async () => {
       try {
-        const hospitals = await api.get<{ id: string; user_id: string }[]>("/hospitals");
-        const current = hospitals.find((h) => String(h.user_id) === String(session.user.id));
+        let current: { id: string; user_id: string } | null = null;
+        try {
+          current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
+        } catch {
+          const hospitals = await api.get<{ id: string; user_id: string }[]>("/hospitals");
+          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
+        }
+
         if (current) {
           setHospitalId(current.id);
           const res = await api.get<BloodStock[]>(`/hospitals/${current.id}/blood-bank`);

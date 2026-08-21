@@ -34,12 +34,34 @@ export function DonorBloodRequests() {
 
     const fetchRequests = async () => {
       try {
-        const donors = await api.get<DonorProfile[]>("/donors");
-        const profile = donors.find((d) => String(d.user_id) === String(session.user.id));
+        let profile: DonorProfile | null = null;
+        try {
+          profile = await api.get<DonorProfile>(`/donors/user/${session.user.id}`);
+        } catch {
+          const donors = await api.get<DonorProfile[]>("/donors");
+          profile = donors.find((d) => String(d.user_id) === String(session.user.id)) || null;
+        }
+
         if (profile) {
           setDonorProfile(profile);
           const res = await api.get<DonorRequestItem[]>(`/blood-requests/donor/${profile.id}`);
           setRequests(res);
+
+          // Update dynamic donor location
+          if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const lat = Number(pos.coords.latitude.toFixed(5));
+                const lng = Number(pos.coords.longitude.toFixed(5));
+                if (profile && (Math.abs(lat - (profile.latitude || 0)) > 0.001 || Math.abs(lng - (profile.longitude || 0)) > 0.001)) {
+                  api.put(`/donors/${profile.id}`, { latitude: lat, longitude: lng }).catch(() => {});
+                  setDonorProfile((prev) => (prev ? { ...prev, latitude: lat, longitude: lng } : prev));
+                }
+              },
+              () => {},
+              { enableHighAccuracy: true, timeout: 5000 }
+            );
+          }
         }
       } catch {
         showToast("Unable to load matching requests", "error");

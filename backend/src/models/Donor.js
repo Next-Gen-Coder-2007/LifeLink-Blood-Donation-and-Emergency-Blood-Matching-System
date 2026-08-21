@@ -52,6 +52,7 @@ const donorSchema = new mongoose.Schema(
 
 donorSchema.index({ blood_group: 1, availability: 1 });
 donorSchema.index({ latitude: 1, longitude: 1 });
+donorSchema.index({ created_at: -1 });
 
 donorSchema.set('toJSON', {
   transform: (doc, ret) => {

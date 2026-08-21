@@ -62,6 +62,8 @@ const bloodRequestSchema = new mongoose.Schema(
 
 bloodRequestSchema.index({ hospital_id: 1, created_at: -1 });
 bloodRequestSchema.index({ blood_group: 1, status: 1 });
+bloodRequestSchema.index({ blood_group: 1, created_at: -1 });
+bloodRequestSchema.index({ created_at: -1 });
 
 bloodRequestSchema.set('toJSON', {
   transform: (doc, ret) => {

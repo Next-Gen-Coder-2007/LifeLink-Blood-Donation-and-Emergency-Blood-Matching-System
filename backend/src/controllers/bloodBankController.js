@@ -13,12 +13,7 @@ export const getBloodBank = async (req, res, next) => {
       throw new AppError('Invalid hospital ID', 400);
     }
 
-    const hospital = await Hospital.findById(hospital_id);
-    if (!hospital) {
-      throw new AppError('Hospital not found', 404);
-    }
-
-    const inventory = await BloodInventory.find({ hospital_id });
+    const inventory = await BloodInventory.find({ hospital_id }).lean();
 
     const inventoryMap = {};
     inventory.forEach((item) => {
