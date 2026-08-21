@@ -1,0 +1,11 @@
+{
+  "name": "LifeLink Mobile",
+  "short_name": "LifeLink",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4444",
+  "description": "LifeLink - Blood Donation & Emergency Matching Mobile App",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
