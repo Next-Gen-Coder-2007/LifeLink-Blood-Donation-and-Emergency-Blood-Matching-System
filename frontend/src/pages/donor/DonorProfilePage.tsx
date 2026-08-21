@@ -31,8 +31,13 @@ export function DonorProfilePage() {
 
     const loadProfile = async () => {
       try {
-        const donors = await api.get<{ id: string; user_id: string; blood_group: string; phone: string; availability: boolean; last_donation_date?: string }[]>("/donors");
-        const myProfile = donors.find((d) => String(d.user_id) === String(session.user.id));
+        let myProfile: any = null;
+        try {
+          myProfile = await api.get(`/donors/user/${session.user.id}`);
+        } catch {
+          const donors = await api.get<{ id: string; user_id: string; blood_group: string; phone: string; availability: boolean; last_donation_date?: string }[]>("/donors");
+          myProfile = donors.find((d) => String(d.user_id) === String(session.user.id));
+        }
         if (myProfile) {
           setDonorId(myProfile.id);
           setForm({

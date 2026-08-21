@@ -48,7 +48,7 @@ export const createDonor = async (req, res, next) => {
 
 export const getDonors = async (req, res, next) => {
   try {
-    const donors = await Donor.find().sort({ created_at: -1 });
+    const donors = await Donor.find().sort({ created_at: -1 }).lean();
 
     const formatted = donors.map((d) => ({
       id: d._id.toString(),
@@ -67,6 +67,34 @@ export const getDonors = async (req, res, next) => {
   }
 };
 
+export const getDonorByUserId = async (req, res, next) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      throw new AppError('Invalid user ID', 400);
+    }
+
+    const donor = await Donor.findOne({ user_id }).lean();
+    if (!donor) {
+      throw new AppError('Donor profile not found', 404);
+    }
+
+    return res.status(200).json({
+      id: donor._id.toString(),
+      user_id: donor.user_id ? donor.user_id.toString() : '',
+      blood_group: donor.blood_group,
+      phone: donor.phone,
+      latitude: donor.latitude,
+      longitude: donor.longitude,
+      availability: donor.availability,
+      last_donation_date: donor.last_donation_date || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getDonorById = async (req, res, next) => {
   try {
     const { donor_id } = req.params;
@@ -75,7 +103,7 @@ export const getDonorById = async (req, res, next) => {
       throw new AppError('Invalid donor ID', 400);
     }
 
-    const donor = await Donor.findById(donor_id);
+    const donor = await Donor.findById(donor_id).lean();
     if (!donor) {
       throw new AppError('Donor not found', 404);
     }

@@ -38,7 +38,7 @@ export const createUser = async (req, res, next) => {
 
 export const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({}, { password_hash: 0 }).sort({ created_at: -1 });
+    const users = await User.find({}, { password_hash: 0 }).sort({ created_at: -1 }).lean();
 
     const formatted = users.map((u) => ({
       id: u._id.toString(),
@@ -62,12 +62,18 @@ export const getUserById = async (req, res, next) => {
       throw new AppError('Invalid user ID', 400);
     }
 
-    const user = await User.findById(user_id, { password_hash: 0 });
+    const user = await User.findById(user_id, { password_hash: 0 }).lean();
     if (!user) {
       throw new AppError('User not found', 404);
     }
 
-    return res.status(200).json(user);
+    return res.status(200).json({
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      created_at: user.created_at ? new Date(user.created_at).toISOString() : new Date().toISOString(),
+    });
   } catch (error) {
     next(error);
   }

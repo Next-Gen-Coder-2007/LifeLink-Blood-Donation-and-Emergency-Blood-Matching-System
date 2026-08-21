@@ -9,7 +9,7 @@ export const loginUser = async (req, res, next) => {
       throw new AppError('Email and password are required', 400);
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).lean();
 
     if (!user) {
       throw new AppError('Invalid email or password', 401);

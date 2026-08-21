@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { getDonors, getDonorById, updateDonor, deleteDonor } from '../controllers/donorController.js';
+import { getDonors, getDonorById, getDonorByUserId, updateDonor, deleteDonor } from '../controllers/donorController.js';
 
 const router = Router();
 
 router.route('/')
   .get(getDonors);
+
+router.get('/user/:user_id', getDonorByUserId);
 
 router.route('/:donor_id')
   .get(getDonorById)

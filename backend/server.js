@@ -1,5 +1,5 @@
 import app from './src/app.js';
-import { connectDB } from './src/config/db.js';
+import { connectDB, initIndexes } from './src/config/db.js';
 import { config } from './src/config/env.js';
 
 const startServer = async () => {
@@ -9,6 +9,9 @@ const startServer = async () => {
     const server = app.listen(config.port, () => {
       console.log(`Server listening on port ${config.port}`);
     });
+
+    // Verify / build indexes asynchronously in background without blocking server startup
+    initIndexes().catch(() => {});
 
     const shutdown = () => {
       server.close(() => {

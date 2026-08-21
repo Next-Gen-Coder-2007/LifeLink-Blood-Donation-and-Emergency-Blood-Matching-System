@@ -49,8 +49,14 @@ export function HospitalDashboard() {
 
     const loadHospital = async () => {
       try {
-        const hospitals = await api.get<HospitalData[]>("/hospitals");
-        const current = hospitals.find((h) => String(h.user_id) === String(session.user.id));
+        let current: HospitalData | null = null;
+        try {
+          current = await api.get<HospitalData>(`/hospitals/user/${session.user.id}`);
+        } catch {
+          const hospitals = await api.get<HospitalData[]>("/hospitals");
+          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
+        }
+
         if (current) {
           setHospital(current);
           const [inventory, reqs] = await Promise.all([

@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes/index.js';
@@ -39,10 +40,14 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Ensure database connection is ready before handling requests (crucial for serverless environments)
+// Fast database connection readiness check (crucial for serverless environments & ultra-low latency)
 app.use(async (req, res, next) => {
   // Allow root health check to respond immediately
   if (req.path === '/' && req.method === 'GET') {
+    return next();
+  }
+  // If already connected, pass through immediately with zero overhead
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
     return next();
   }
   try {

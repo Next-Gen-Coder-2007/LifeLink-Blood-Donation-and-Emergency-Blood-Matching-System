@@ -55,7 +55,7 @@ export const createHospital = async (req, res, next) => {
 
 export const getHospitals = async (req, res, next) => {
   try {
-    const hospitals = await Hospital.find().sort({ created_at: -1 });
+    const hospitals = await Hospital.find().sort({ created_at: -1 }).lean();
 
     const formatted = hospitals.map((h) => ({
       id: h._id.toString(),
@@ -74,6 +74,34 @@ export const getHospitals = async (req, res, next) => {
   }
 };
 
+export const getHospitalByUserId = async (req, res, next) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      throw new AppError('Invalid user ID', 400);
+    }
+
+    const hospital = await Hospital.findOne({ user_id }).lean();
+    if (!hospital) {
+      throw new AppError('Hospital not found', 404);
+    }
+
+    return res.status(200).json({
+      id: hospital._id.toString(),
+      user_id: hospital.user_id ? hospital.user_id.toString() : '',
+      hospital_name: hospital.hospital_name,
+      phone: hospital.phone,
+      emergency_contact: hospital.emergency_contact,
+      latitude: hospital.latitude,
+      longitude: hospital.longitude,
+      address: hospital.address,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getHospitalById = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
@@ -82,7 +110,7 @@ export const getHospitalById = async (req, res, next) => {
       throw new AppError('Invalid hospital ID', 400);
     }
 
-    const hospital = await Hospital.findById(hospital_id);
+    const hospital = await Hospital.findById(hospital_id).lean();
     if (!hospital) {
       throw new AppError('Hospital not found', 404);
     }
