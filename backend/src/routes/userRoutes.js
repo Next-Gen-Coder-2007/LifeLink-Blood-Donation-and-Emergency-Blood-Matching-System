@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, getUsers, getUserById, deleteUser } from '../controllers/userController.js';
+import { createUser, getUsers, getUserById, updateUser, deleteUser } from '../controllers/userController.js';
 import { createDonor } from '../controllers/donorController.js';
 import { createHospital } from '../controllers/hospitalController.js';
 
@@ -11,6 +11,7 @@ router.route('/')
 
 router.route('/:user_id')
   .get(getUserById)
+  .put(updateUser)
   .delete(deleteUser);
 
 router.post('/:user_id/donor', createDonor);

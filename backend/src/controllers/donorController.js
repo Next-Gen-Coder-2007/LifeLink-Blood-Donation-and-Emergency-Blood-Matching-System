@@ -8,7 +8,7 @@ import { AppError } from '../middlewares/errorMiddleware.js';
 export const createDonor = async (req, res, next) => {
   try {
     const { user_id } = req.params;
-    const { blood_group, phone, latitude, longitude, availability, last_donation_date } = req.body;
+    const { blood_group, phone, address, latitude, longitude, availability, last_donation_date } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
       throw new AppError('Invalid user ID', 400);
@@ -32,6 +32,7 @@ export const createDonor = async (req, res, next) => {
       user_id,
       blood_group: blood_group ? blood_group.toUpperCase() : undefined,
       phone,
+      address: address || '',
       latitude: Number(latitude) || 0,
       longitude: Number(longitude) || 0,
       availability: availability !== undefined ? Boolean(availability) : true,
@@ -67,6 +68,7 @@ export const getDonors = async (req, res, next) => {
         email: userObj ? userObj.email : '',
         blood_group: d.blood_group,
         phone: d.phone,
+        address: d.address || '',
         latitude: d.latitude,
         longitude: d.longitude,
         availability: d.availability,
@@ -85,7 +87,7 @@ export const getDonorByUserId = async (req, res, next) => {
     const { user_id } = req.params;
 
     const query = mongoose.Types.ObjectId.isValid(user_id)
-      ? { user_id: new mongoose.Types.ObjectId(user_id) }
+      ? { $or: [{ user_id: new mongoose.Types.ObjectId(user_id) }, { user_id: String(user_id) }] }
       : { user_id: String(user_id) };
 
     const donor = await Donor.findOne(query)
@@ -105,6 +107,7 @@ export const getDonorByUserId = async (req, res, next) => {
       email: userObj ? userObj.email : '',
       blood_group: donor.blood_group,
       phone: donor.phone,
+      address: donor.address || '',
       latitude: donor.latitude,
       longitude: donor.longitude,
       availability: donor.availability,
@@ -119,11 +122,11 @@ export const getDonorById = async (req, res, next) => {
   try {
     const { donor_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(donor_id)) {
-      throw new AppError('Invalid donor ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(donor_id)
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(donor_id) }, { _id: String(donor_id) }] }
+      : { _id: String(donor_id) };
 
-    const donor = await Donor.findById(donor_id)
+    const donor = await Donor.findOne(query)
       .populate({ path: 'user_id', select: 'name email' })
       .lean();
 
@@ -140,6 +143,7 @@ export const getDonorById = async (req, res, next) => {
       email: userObj ? userObj.email : '',
       blood_group: donor.blood_group,
       phone: donor.phone,
+      address: donor.address || '',
       latitude: donor.latitude,
       longitude: donor.longitude,
       availability: donor.availability,
@@ -154,16 +158,16 @@ export const updateDonor = async (req, res, next) => {
   try {
     const { donor_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(donor_id)) {
-      throw new AppError('Invalid donor ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(donor_id)
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(donor_id) }, { _id: String(donor_id) }] }
+      : { _id: String(donor_id) };
 
     const updates = { ...req.body };
     if (updates.blood_group) {
       updates.blood_group = updates.blood_group.toUpperCase();
     }
 
-    const donor = await Donor.findByIdAndUpdate(donor_id, updates, {
+    const donor = await Donor.findOneAndUpdate(query, updates, {
       new: true,
       runValidators: true,
     });
@@ -179,6 +183,7 @@ export const updateDonor = async (req, res, next) => {
         user_id: donor.user_id ? donor.user_id.toString() : '',
         blood_group: donor.blood_group,
         phone: donor.phone,
+        address: donor.address || '',
         latitude: donor.latitude,
         longitude: donor.longitude,
         availability: donor.availability,

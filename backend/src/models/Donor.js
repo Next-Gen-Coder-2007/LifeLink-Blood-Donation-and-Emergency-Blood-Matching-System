@@ -37,6 +37,11 @@ const donorSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     last_donation_date: {
       type: String,
       default: null,

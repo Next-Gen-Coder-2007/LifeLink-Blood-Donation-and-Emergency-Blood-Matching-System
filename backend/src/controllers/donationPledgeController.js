@@ -125,11 +125,11 @@ export const getPledgesByHospital = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ hospital_id: new mongoose.Types.ObjectId(hospital_id) }, { hospital_id: String(hospital_id) }] }
+      : { hospital_id: String(hospital_id) };
 
-    const pledges = await DonationPledge.find({ hospital_id })
+    const pledges = await DonationPledge.find(query)
       .sort({ created_at: -1 })
       .lean();
 

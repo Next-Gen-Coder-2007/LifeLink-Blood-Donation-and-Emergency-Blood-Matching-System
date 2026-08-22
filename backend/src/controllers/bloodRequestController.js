@@ -127,11 +127,11 @@ export const getHospitalBloodRequests = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ hospital_id: new mongoose.Types.ObjectId(hospital_id) }, { hospital_id: String(hospital_id) }] }
+      : { hospital_id: String(hospital_id) };
 
-    const requests = await BloodRequest.find({ hospital_id }).sort({ created_at: -1 }).lean();
+    const requests = await BloodRequest.find(query).sort({ created_at: -1 }).lean();
 
     const formatted = requests.map((r) => ({
       id: r._id.toString(),
