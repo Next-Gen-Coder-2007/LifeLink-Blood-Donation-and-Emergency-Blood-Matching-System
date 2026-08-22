@@ -293,16 +293,39 @@ export const completePledgeAndVerifyDonation = async (req, res, next) => {
       { upsert: true, new: true }
     );
 
-    // 4. Update Blood Request status if fulfilled (terminal state lock)
+    // 4. Update Blood Request status & units if satisfied from donation history
     if (bloodRequest) {
-      if (bloodRequest.status !== 'fulfilled' && bloodRequest.status !== 'completed') {
-        const remainingUnits = Math.max(0, bloodRequest.units_required - unitsCount);
-        if (remainingUnits === 0) {
-          bloodRequest.status = 'fulfilled';
-        }
-        bloodRequest.units_required = remainingUnits > 0 ? remainingUnits : 0;
-        await bloodRequest.save();
+      if (!bloodRequest.initial_units_required) {
+        bloodRequest.initial_units_required = Math.max(1, (bloodRequest.units_required || 0) + unitsCount);
       }
+
+      // Aggregate all verified donation units for this specific request from DonationHistory
+      const historyAgg = await DonationHistory.aggregate([
+        {
+          $match: {
+            blood_request_id: bloodRequest._id,
+            status: { $in: ['verified', 'completed'] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalUnits: { $sum: '$units' },
+          },
+        },
+      ]);
+
+      const totalUnitsDonated = (historyAgg[0]?.totalUnits || 0);
+      const initialTarget = bloodRequest.initial_units_required;
+      const remainingUnits = Math.max(0, initialTarget - totalUnitsDonated);
+
+      bloodRequest.units_required = remainingUnits;
+
+      if (remainingUnits === 0 || totalUnitsDonated >= initialTarget) {
+        bloodRequest.status = 'fulfilled';
+      }
+
+      await bloodRequest.save();
     }
 
     // 5. Update Donor profile's last_donation_date to today

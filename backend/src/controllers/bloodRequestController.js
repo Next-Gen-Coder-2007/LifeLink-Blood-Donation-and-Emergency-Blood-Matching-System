@@ -2,8 +2,9 @@ import mongoose from 'mongoose';
 import { BloodRequest } from '../models/BloodRequest.js';
 import { Hospital } from '../models/Hospital.js';
 import { Donor } from '../models/Donor.js';
+import { DonationHistory } from '../models/DonationHistory.js';
 import { Notification } from '../models/Notification.js';
-import { getCompatibleDonorGroups } from '../utils/bloodMatchingEngine.js';
+import { getCompatibleDonorGroups, getCompatibleRecipientGroups } from '../utils/bloodMatchingEngine.js';
 import { AppError } from '../middlewares/errorMiddleware.js';
 
 const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -42,6 +43,7 @@ export const createBloodRequest = async (req, res, next) => {
       hospital_id,
       blood_group: group,
       units_required: units,
+      initial_units_required: units,
       urgency: urg,
       patient_name: patient_name || null,
       required_by: required_by || null,
@@ -78,6 +80,7 @@ export const createBloodRequest = async (req, res, next) => {
       hospital_id: newRequest.hospital_id.toString(),
       blood_group: newRequest.blood_group,
       units_required: newRequest.units_required,
+      initial_units_required: newRequest.initial_units_required || newRequest.units_required,
       urgency: newRequest.urgency,
       patient_name: newRequest.patient_name,
       required_by: newRequest.required_by,
@@ -98,6 +101,7 @@ export const getAllBloodRequests = async (req, res, next) => {
 
     const formatted = requests.map((r) => {
       const hosp = r.hospital_id || {};
+      const isSatisfied = (r.units_required <= 0) || r.status === 'fulfilled' || r.status === 'completed';
       return {
         id: r._id.toString(),
         hospital_id: hosp._id ? hosp._id.toString() : (r.hospital_id ? String(r.hospital_id) : ''),
@@ -109,10 +113,11 @@ export const getAllBloodRequests = async (req, res, next) => {
         hospital_longitude: hosp.longitude || 0,
         blood_group: r.blood_group,
         units_required: r.units_required,
+        initial_units_required: r.initial_units_required || r.units_required,
         urgency: r.urgency,
         patient_name: r.patient_name || null,
         required_by: r.required_by || null,
-        status: r.status,
+        status: isSatisfied && r.status === 'searching' ? 'fulfilled' : r.status,
         created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       };
     });
@@ -133,17 +138,21 @@ export const getHospitalBloodRequests = async (req, res, next) => {
 
     const requests = await BloodRequest.find(query).sort({ created_at: -1 }).lean();
 
-    const formatted = requests.map((r) => ({
-      id: r._id.toString(),
-      hospital_id: r.hospital_id ? r.hospital_id.toString() : '',
-      blood_group: r.blood_group,
-      units_required: r.units_required,
-      urgency: r.urgency,
-      patient_name: r.patient_name || null,
-      required_by: r.required_by || null,
-      status: r.status,
-      created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
-    }));
+    const formatted = requests.map((r) => {
+      const isSatisfied = (r.units_required <= 0) || r.status === 'fulfilled' || r.status === 'completed';
+      return {
+        id: r._id.toString(),
+        hospital_id: r.hospital_id ? r.hospital_id.toString() : '',
+        blood_group: r.blood_group,
+        units_required: r.units_required,
+        initial_units_required: r.initial_units_required || r.units_required,
+        urgency: r.urgency,
+        patient_name: r.patient_name || null,
+        required_by: r.required_by || null,
+        status: isSatisfied && r.status === 'searching' ? 'fulfilled' : r.status,
+        created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      };
+    });
 
     return res.status(200).json(formatted);
   } catch (error) {
@@ -196,6 +205,7 @@ export const getDonorBloodRequests = async (req, res, next) => {
         hospital_longitude: hosp.longitude || 0,
         blood_group: r.blood_group,
         units_required: r.units_required,
+        initial_units_required: r.initial_units_required || r.units_required,
         urgency: r.urgency,
         patient_name: r.patient_name || null,
         required_by: r.required_by || null,
@@ -224,6 +234,7 @@ export const getBloodRequestById = async (req, res, next) => {
     }
 
     const hosp = r.hospital_id || {};
+    const isSatisfied = (r.units_required <= 0) || r.status === 'fulfilled' || r.status === 'completed';
     return res.status(200).json({
       id: r._id.toString(),
       hospital_id: hosp._id ? hosp._id.toString() : (r.hospital_id ? r.hospital_id.toString() : ''),
@@ -235,10 +246,11 @@ export const getBloodRequestById = async (req, res, next) => {
       hospital_longitude: hosp.longitude || 0,
       blood_group: r.blood_group,
       units_required: r.units_required,
+      initial_units_required: r.initial_units_required || r.units_required,
       urgency: r.urgency,
       patient_name: r.patient_name || null,
       required_by: r.required_by || null,
-      status: r.status,
+      status: isSatisfied && r.status === 'searching' ? 'fulfilled' : r.status,
       created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     });
   } catch (error) {

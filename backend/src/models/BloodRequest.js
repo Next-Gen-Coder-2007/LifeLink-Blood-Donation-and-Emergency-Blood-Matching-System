@@ -24,7 +24,11 @@ const bloodRequestSchema = new mongoose.Schema(
     units_required: {
       type: Number,
       required: [true, 'Units required is required'],
-      min: [1, 'Units required must be greater than 0'],
+      min: [0, 'Units required cannot be negative'],
+    },
+    initial_units_required: {
+      type: Number,
+      min: 1,
     },
     urgency: {
       type: String,

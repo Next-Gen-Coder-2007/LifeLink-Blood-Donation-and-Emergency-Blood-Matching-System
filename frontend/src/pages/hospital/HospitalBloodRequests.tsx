@@ -16,6 +16,7 @@ interface BloodRequestItem {
   hospital_id: string;
   blood_group: string;
   units_required: number;
+  initial_units_required?: number;
   urgency: "normal" | "urgent" | "emergency";
   patient_name?: string;
   required_by?: string;
@@ -73,14 +74,7 @@ export function HospitalBloodRequests() {
 
     const init = async () => {
       try {
-        let current: { id: string; user_id: string } | null = null;
-        try {
-          current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
-        } catch {
-          const hospitals = await api.get<{ id: string; user_id: string }[]>("/hospitals");
-          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
-        }
-
+        const current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
         if (current) {
           setHospitalId(current.id);
           loadRequests(current.id);
@@ -91,7 +85,7 @@ export function HospitalBloodRequests() {
     };
 
     init();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleCreate = async (formData: {
     blood_group: string;
@@ -219,7 +213,10 @@ export function HospitalBloodRequests() {
                       <div className="flex flex-wrap items-center gap-2">
                         <UrgencyBadge urgency={r.urgency} />
                         <span className="font-extrabold text-sm text-slate-900">
-                          {r.units_required} Units of <span className="text-red-600">{r.blood_group}</span>
+                          {isTerminal
+                            ? `Fulfilled (${r.initial_units_required || r.units_required || 1} Units Satisfied) • `
+                            : `${r.units_required} Units of `}
+                          <span className="text-red-600">{r.blood_group}</span>
                         </span>
                         {r.patient_name && <span className="text-xs text-slate-500">({r.patient_name})</span>}
                       </div>
