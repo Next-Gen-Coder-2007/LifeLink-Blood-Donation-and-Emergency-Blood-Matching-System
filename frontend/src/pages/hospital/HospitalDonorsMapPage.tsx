@@ -39,13 +39,7 @@ export function HospitalDonorsMapPage() {
   const loadMapData = async () => {
     try {
       if (isHospital && session?.user.id) {
-        let current: HospitalData | null = null;
-        try {
-          current = await api.get<HospitalData>(`/hospitals/user/${session.user.id}`);
-        } catch {
-          const hospitals = await api.get<HospitalData[]>("/hospitals");
-          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
-        }
+        const current = await api.get<HospitalData>(`/hospitals/user/${session.user.id}`);
 
         if (current) {
           setHospital(current);
@@ -69,8 +63,8 @@ export function HospitalDonorsMapPage() {
           }
         }
       }
-    } catch {
-      showToast("Unable to load radar map", "error");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Unable to load radar map", "error");
     } finally {
       setLoading(false);
       setRefreshing(false);

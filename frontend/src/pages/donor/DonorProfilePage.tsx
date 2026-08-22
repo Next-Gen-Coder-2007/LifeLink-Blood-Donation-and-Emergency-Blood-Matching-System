@@ -37,13 +37,15 @@ export function DonorProfilePage() {
 
     const loadProfile = async () => {
       try {
-        let myProfile: any = null;
-        try {
-          myProfile = await api.get(`/donors/user/${session.user.id}`);
-        } catch {
-          const donors = await api.get<any[]>("/donors");
-          myProfile = donors.find((d) => String(d.user_id) === String(session.user.id) || String(d.id) === String(session.user.profile_id));
-        }
+        const myProfile = await api.get<{
+          id: string;
+          phone?: string;
+          blood_group?: string;
+          address?: string;
+          availability?: boolean;
+          last_donation_date?: string;
+        }>(`/donors/user/${session.user.id}`);
+
         if (myProfile) {
           setDonorId(myProfile.id);
           setForm({
@@ -58,15 +60,15 @@ export function DonorProfilePage() {
             confirm_password: "",
           });
         }
-      } catch {
-        showToast("Unable to load profile data", "error");
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Unable to load profile data", "error");
       } finally {
         setLoading(false);
       }
     };
 
     loadProfile();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();

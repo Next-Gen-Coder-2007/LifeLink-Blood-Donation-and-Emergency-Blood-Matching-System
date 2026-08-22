@@ -35,13 +35,15 @@ export function HospitalSettingsPage() {
 
     const loadHospital = async () => {
       try {
-        let current: any = null;
-        try {
-          current = await api.get(`/hospitals/user/${session.user.id}`);
-        } catch {
-          const hospitals = await api.get<any[]>("/hospitals");
-          current = hospitals.find((h) => String(h.user_id) === String(session.user.id) || String(h.id) === String(session.user.profile_id));
-        }
+        const current = await api.get<{
+          id: string;
+          hospital_name?: string;
+          phone?: string;
+          emergency_contact?: string;
+          address?: string;
+          latitude?: number;
+          longitude?: number;
+        }>(`/hospitals/user/${session.user.id}`);
 
         if (current) {
           setHospitalId(current.id);
@@ -57,15 +59,15 @@ export function HospitalSettingsPage() {
             confirm_password: "",
           });
         }
-      } catch {
-        showToast("Unable to load hospital settings", "error");
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Unable to load hospital settings", "error");
       } finally {
         setLoading(false);
       }
     };
 
     loadHospital();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {

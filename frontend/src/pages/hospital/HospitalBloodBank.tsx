@@ -29,14 +29,7 @@ export function HospitalBloodBank() {
 
     const loadInventory = async () => {
       try {
-        let current: { id: string; user_id: string } | null = null;
-        try {
-          current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
-        } catch {
-          const hospitals = await api.get<{ id: string; user_id: string }[]>("/hospitals");
-          current = hospitals.find((h) => String(h.user_id) === String(session.user.id)) || null;
-        }
-
+        const current = await api.get<{ id: string; user_id: string }>(`/hospitals/user/${session.user.id}`);
         if (current) {
           setHospitalId(current.id);
           const res = await api.get<BloodStock[]>(`/hospitals/${current.id}/blood-bank`);
@@ -46,15 +39,15 @@ export function HospitalBloodBank() {
           });
           setStock(map);
         }
-      } catch {
-        showToast("Failed to load inventory", "error");
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Failed to load inventory", "error");
       } finally {
         setLoading(false);
       }
     };
 
     loadInventory();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const updateUnits = async (group: string, newCount: number) => {
     if (newCount < 0 || !hospitalId) return;

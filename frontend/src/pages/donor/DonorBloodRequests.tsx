@@ -90,8 +90,7 @@ export function DonorBloodRequests() {
         try {
           profile = await api.get<DonorProfile>(`/donors/user/${session.user.id}`);
         } catch {
-          const donors = await api.get<DonorProfile[]>("/donors");
-          profile = donors.find((d) => String(d.user_id) === String(session.user.id)) || null;
+          profile = null;
         }
       }
 
@@ -132,7 +131,7 @@ export function DonorBloodRequests() {
       return;
     }
     loadDonorAndRequests();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleRefresh = () => {
     setRefreshing(true);
