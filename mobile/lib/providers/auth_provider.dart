@@ -203,7 +203,28 @@ class AuthProvider with ChangeNotifier {
     if (_user == null) return;
     try {
       if (_user!.role == 'donor') {
-        final res = await NetworkClient.get(ApiConfig.donorByUserId(_user!.id));
+        dynamic res;
+        try {
+          res = await NetworkClient.get(ApiConfig.donorByUserId(_user!.id));
+        } catch (_) {
+          if (_user!.profileId != null && _user!.profileId!.isNotEmpty) {
+            try {
+              res = await NetworkClient.get(ApiConfig.donorById(_user!.profileId!));
+            } catch (_) {}
+          }
+          if (res == null) {
+            try {
+              final donors = await NetworkClient.get(ApiConfig.donors);
+              if (donors is List) {
+                res = donors.firstWhere(
+                  (d) => d['user_id']?.toString() == _user!.id || d['id']?.toString() == _user!.profileId,
+                  orElse: () => null,
+                );
+              }
+            } catch (_) {}
+          }
+        }
+
         if (res is Map) {
           _donorProfile = DonorModel.fromJson(Map<String, dynamic>.from(res));
           if (_donorProfile!.latitude != 0) {
@@ -212,16 +233,204 @@ class AuthProvider with ChangeNotifier {
           }
         }
       } else if (_user!.role == 'hospital') {
-        final res = await NetworkClient.get(ApiConfig.hospitalByUserId(_user!.id));
+        dynamic res;
+        // 1. Try get hospital by user id
+        try {
+          res = await NetworkClient.get(ApiConfig.hospitalByUserId(_user!.id));
+        } catch (_) {
+          // 2. Try get hospital by profileId if available
+          if (_user!.profileId != null && _user!.profileId!.isNotEmpty) {
+            try {
+              res = await NetworkClient.get(ApiConfig.hospitalById(_user!.profileId!));
+            } catch (_) {}
+          }
+          // 3. Try fetching all hospitals and match by user_id or id
+          if (res == null) {
+            try {
+              final hospitals = await NetworkClient.get(ApiConfig.hospitals);
+              if (hospitals is List) {
+                res = hospitals.firstWhere(
+                  (h) => h['user_id']?.toString() == _user!.id || h['id']?.toString() == _user!.profileId,
+                  orElse: () => null,
+                );
+              }
+            } catch (_) {}
+          }
+        }
+
         if (res is Map) {
           _hospitalProfile = HospitalModel.fromJson(Map<String, dynamic>.from(res));
           if (_hospitalProfile!.latitude != 0) {
             _userLat = _hospitalProfile!.latitude;
             _userLng = _hospitalProfile!.longitude;
           }
+        } else if (_user!.profileId != null && _user!.profileId!.isNotEmpty) {
+          // Fallback minimal hospital profile so features never fail with null
+          _hospitalProfile = HospitalModel(
+            id: _user!.profileId!,
+            userId: _user!.id,
+            hospitalName: _user!.name,
+            phone: '',
+            emergencyContact: '',
+            address: 'Medical Facility',
+            latitude: _userLat,
+            longitude: _userLng,
+          );
         }
       }
     } catch (_) {}
+  }
+
+  Future<void> updateUserProfile({
+    required String name,
+    required String email,
+    String? password,
+  }) async {
+    if (_user == null) return;
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'email': email.trim(),
+      };
+      if (password != null && password.trim().isNotEmpty) {
+        body['password'] = password.trim();
+      }
+
+      await NetworkClient.put(ApiConfig.userById(_user!.id), body: body);
+
+      _user = UserModel(
+        id: _user!.id,
+        name: name.trim(),
+        email: email.trim(),
+        role: _user!.role,
+        profileId: _user!.profileId,
+        bloodGroup: _user!.bloodGroup,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_user', jsonEncode(_user!.toJson()));
+
+      if (_donorProfile != null) {
+        _donorProfile = DonorModel(
+          id: _donorProfile!.id,
+          userId: _donorProfile!.userId,
+          donorName: name.trim(),
+          bloodGroup: _donorProfile!.bloodGroup,
+          phone: _donorProfile!.phone,
+          address: _donorProfile!.address,
+          latitude: _donorProfile!.latitude,
+          longitude: _donorProfile!.longitude,
+          availability: _donorProfile!.availability,
+          lastDonationDate: _donorProfile!.lastDonationDate,
+        );
+      }
+
+      if (_hospitalProfile != null) {
+        _hospitalProfile = HospitalModel(
+          id: _hospitalProfile!.id,
+          userId: _hospitalProfile!.userId,
+          hospitalName: name.trim(),
+          phone: _hospitalProfile!.phone,
+          emergencyContact: _hospitalProfile!.emergencyContact,
+          address: _hospitalProfile!.address,
+          latitude: _hospitalProfile!.latitude,
+          longitude: _hospitalProfile!.longitude,
+        );
+      }
+
+      notifyListeners();
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateDonorProfile({
+    required String phone,
+    required String bloodGroup,
+    required String address,
+    required bool availability,
+    String? lastDonationDate,
+  }) async {
+    final donorId = _donorProfile?.id ?? _user?.profileId;
+    if (donorId == null || donorId.isEmpty) return;
+
+    try {
+      final body = <String, dynamic>{
+        'phone': phone.trim(),
+        'blood_group': bloodGroup.toUpperCase(),
+        'address': address.trim(),
+        'availability': availability,
+        'last_donation_date': (lastDonationDate != null && lastDonationDate.trim().isNotEmpty) ? lastDonationDate.trim() : null,
+      };
+
+      await NetworkClient.put(ApiConfig.donorById(donorId), body: body);
+
+      _donorProfile = DonorModel(
+        id: donorId,
+        userId: _donorProfile?.userId ?? _user?.id ?? '',
+        donorName: _donorProfile?.donorName ?? _user?.name ?? 'Volunteer Donor',
+        bloodGroup: bloodGroup.toUpperCase(),
+        phone: phone.trim(),
+        address: address.trim(),
+        latitude: _donorProfile?.latitude ?? _userLat,
+        longitude: _donorProfile?.longitude ?? _userLng,
+        availability: availability,
+        lastDonationDate: (lastDonationDate != null && lastDonationDate.trim().isNotEmpty) ? lastDonationDate.trim() : null,
+      );
+
+      if (_user != null) {
+        _user = UserModel(
+          id: _user!.id,
+          name: _user!.name,
+          email: _user!.email,
+          role: _user!.role,
+          profileId: _user!.profileId,
+          bloodGroup: bloodGroup.toUpperCase(),
+        );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_user', jsonEncode(_user!.toJson()));
+      }
+
+      notifyListeners();
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateHospitalProfile({
+    required String hospitalName,
+    required String phone,
+    required String emergencyContact,
+    required String address,
+  }) async {
+    final hospId = _hospitalProfile?.id ?? _user?.profileId;
+    if (hospId == null || hospId.isEmpty) return;
+
+    try {
+      final body = <String, dynamic>{
+        'hospital_name': hospitalName.trim(),
+        'phone': phone.trim(),
+        'emergency_contact': emergencyContact.trim(),
+        'address': address.trim(),
+      };
+
+      await NetworkClient.put(ApiConfig.hospitalById(hospId), body: body);
+
+      _hospitalProfile = HospitalModel(
+        id: hospId,
+        userId: _hospitalProfile?.userId ?? _user?.id ?? '',
+        hospitalName: hospitalName.trim(),
+        phone: phone.trim(),
+        emergencyContact: emergencyContact.trim(),
+        address: address.trim(),
+        latitude: _hospitalProfile?.latitude ?? _userLat,
+        longitude: _hospitalProfile?.longitude ?? _userLng,
+      );
+
+      notifyListeners();
+    } catch (_) {
+      rethrow;
+    }
   }
 
   Future<void> updateDonorAvailability(bool available) async {

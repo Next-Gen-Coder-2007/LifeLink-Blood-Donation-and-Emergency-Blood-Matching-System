@@ -36,6 +36,9 @@ class LucideIcons {
   static const IconData logOut = Icons.logout_rounded;
   static const IconData moon = Icons.nightlight_round;
   static const IconData activity = Icons.health_and_safety_rounded;
+  static const IconData building = Icons.apartment_rounded;
+  static const IconData settings = Icons.settings_rounded;
+  static const IconData save = Icons.save_rounded;
   static const IconData layoutDashboard = Icons.dashboard_rounded;
   static const IconData gitPullRequest = Icons.alt_route_rounded;
   static const IconData send = Icons.send_rounded;

@@ -9,6 +9,7 @@ import 'hospital_dashboard_screen.dart';
 import 'hospital_requests_screen.dart';
 import 'hospital_inventory_screen.dart';
 import 'hospital_radar_screen.dart';
+import 'hospital_settings_screen.dart';
 
 class HospitalMainNav extends StatefulWidget {
   const HospitalMainNav({super.key});
@@ -19,12 +20,14 @@ class HospitalMainNav extends StatefulWidget {
 
 class _HospitalMainNavState extends State<HospitalMainNav> {
   int _currentIndex = 0;
+  String? _loadedHospitalId;
 
   final List<Widget> _screens = const [
     HospitalDashboardScreen(),
     HospitalRequestsScreen(),
     HospitalInventoryScreen(),
     HospitalRadarScreen(),
+    HospitalSettingsScreen(),
   ];
 
   @override
@@ -35,16 +38,34 @@ class _HospitalMainNavState extends State<HospitalMainNav> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = Provider.of<AuthProvider>(context);
+    final hospId = auth.hospitalProfile?.id ?? auth.user?.profileId;
+    if (hospId != null && hospId.isNotEmpty && hospId != _loadedHospitalId) {
+      _loadData();
+    }
+  }
+
   void _loadData() {
     final auth = context.read<AuthProvider>();
     final hosp = auth.hospitalProfile;
-    if (hosp != null) {
+    final hospId = hosp?.id ?? auth.user?.profileId;
+    final userId = auth.user?.id;
+
+    if (hospId != null && hospId.isNotEmpty) {
+      _loadedHospitalId = hospId;
+      final lat = (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat;
+      final lng = (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng;
       context.read<HospitalProvider>().loadHospitalData(
-            hospitalId: hosp.id,
-            hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-            hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+            hospitalId: hospId,
+            hospitalLat: lat,
+            hospitalLng: lng,
           );
-      context.read<NotificationProvider>().fetchNotifications(auth.user!.id, role: 'hospital');
+    }
+    if (userId != null && userId.isNotEmpty) {
+      context.read<NotificationProvider>().fetchNotifications(userId, role: 'hospital');
     }
   }
 
@@ -85,7 +106,12 @@ class _HospitalMainNavState extends State<HospitalMainNav> {
             NavigationDestination(
               icon: Icon(LucideIcons.radar, size: 20, color: AppTheme.slate500),
               selectedIcon: Icon(LucideIcons.radar, size: 20, color: AppTheme.medicalBlue),
-              label: 'Donor Radar',
+              label: 'Radar',
+            ),
+            NavigationDestination(
+              icon: Icon(LucideIcons.settings, size: 20, color: AppTheme.slate500),
+              selectedIcon: Icon(LucideIcons.settings, size: 20, color: AppTheme.medicalBlue),
+              label: 'Settings',
             ),
           ],
         ),
