@@ -5,7 +5,6 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/donor_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../common/notifications_screen.dart';
 import 'donor_dashboard_screen.dart';
 import 'donor_requests_screen.dart';
 import 'donor_history_screen.dart';
@@ -52,9 +51,6 @@ class _DonorMainNavState extends State<DonorMainNav> {
 
   @override
   Widget build(BuildContext context) {
-    final notifProvider = context.watch<NotificationProvider>();
-    final unread = notifProvider.unreadCount;
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,

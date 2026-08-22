@@ -23,11 +23,12 @@ class HospitalInventoryScreen extends StatelessWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (hosp != null) {
+          final hospId = hosp?.id ?? auth.user?.profileId;
+          if (hospId != null && hospId.isNotEmpty) {
             await hospProvider.loadHospitalData(
-              hospitalId: hosp.id,
-              hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-              hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+              hospitalId: hospId,
+              hospitalLat: (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat,
+              hospitalLng: (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng,
             );
           }
         },
@@ -98,6 +99,7 @@ class HospitalInventoryScreen extends StatelessWidget {
                   final bg = BloodMatchingEngine.allBloodGroups[i];
                   final units = inv[bg] ?? 0;
                   final isLow = units < 3;
+                  final hospId = hosp?.id ?? auth.user?.profileId;
 
                   return Container(
                     padding: const EdgeInsets.all(14),
@@ -139,9 +141,9 @@ class HospitalInventoryScreen extends StatelessWidget {
                               children: [
                                 InkWell(
                                   onTap: () {
-                                    if (hosp != null && units > 0) {
+                                    if (hospId != null && hospId.isNotEmpty && units > 0) {
                                       hospProvider.updateInventoryUnit(
-                                        hospitalId: hosp.id,
+                                        hospitalId: hospId,
                                         bloodGroup: bg,
                                         newUnits: units - 1,
                                       );
@@ -156,9 +158,9 @@ class HospitalInventoryScreen extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 InkWell(
                                   onTap: () {
-                                    if (hosp != null) {
+                                    if (hospId != null && hospId.isNotEmpty) {
                                       hospProvider.updateInventoryUnit(
-                                        hospitalId: hosp.id,
+                                        hospitalId: hospId,
                                         bloodGroup: bg,
                                         newUnits: units + 1,
                                       );

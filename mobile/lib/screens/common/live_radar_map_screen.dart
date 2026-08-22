@@ -8,7 +8,6 @@ import '../../core/network_client.dart';
 import '../../core/distance_engine.dart';
 import '../../models/hospital_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/blood_group_badge.dart';
 
 class LiveRadarMapScreen extends StatefulWidget {
   const LiveRadarMapScreen({super.key});

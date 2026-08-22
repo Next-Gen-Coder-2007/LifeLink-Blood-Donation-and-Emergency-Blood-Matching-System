@@ -29,6 +29,7 @@ class ApiConfig {
   // Auth & User Endpoints
   static String get login => '$baseUrl/login';
   static String get users => '$baseUrl/users';
+  static String userById(String userId) => '$baseUrl/users/$userId';
   static String userDonorProfile(String userId) => '$baseUrl/users/$userId/donor';
   static String userHospitalProfile(String userId) => '$baseUrl/users/$userId/hospital';
 
@@ -55,6 +56,7 @@ class ApiConfig {
   static String donationPledgeById(String id) => '$baseUrl/donation-pledges/$id';
   static String donationPledgesByDonor(String donorId) => '$baseUrl/donation-pledges/donor/$donorId';
   static String donationPledgesByHospital(String hospitalId) => '$baseUrl/donation-pledges/hospital/$hospitalId';
+  static String completePledge(String pledgeId) => '$baseUrl/donation-pledges/$pledgeId/complete';
 
   // Donation History Endpoints
   static String get donationHistory => '$baseUrl/donation-history';
@@ -62,7 +64,8 @@ class ApiConfig {
   static String donationHistoryByHospital(String hospitalId) => '$baseUrl/donation-history/hospital/$hospitalId';
 
   // Blood Inventory Endpoints
-  static String bloodInventoryByHospital(String hospitalId) => '$baseUrl/blood-inventory/$hospitalId';
+  static String bloodInventoryByHospital(String hospitalId) => '$baseUrl/hospitals/$hospitalId/blood-bank';
+  static String bloodBankByHospital(String hospitalId) => '$baseUrl/hospitals/$hospitalId/blood-bank';
 
   // Notifications Endpoints
   static String notificationsByUser(String userId, {String? role}) =>

@@ -5,7 +5,6 @@ import '../../config/theme.dart';
 import '../../core/blood_matching_engine.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/donor_provider.dart';
-import '../../widgets/blood_group_badge.dart';
 import '../../widgets/request_card.dart';
 import '../../widgets/pledge_modal_sheet.dart';
 

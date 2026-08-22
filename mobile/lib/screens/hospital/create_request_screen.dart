@@ -34,13 +34,14 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     final auth = context.read<AuthProvider>();
     final hospProvider = context.read<HospitalProvider>();
     final hosp = auth.hospitalProfile;
+    final hospId = hosp?.id ?? auth.user?.profileId;
 
-    if (hosp == null) return;
+    if (hospId == null || hospId.isEmpty) return;
     setState(() => _isSubmitting = true);
 
     try {
       await hospProvider.createBloodRequest(
-        hospitalId: hosp.id,
+        hospitalId: hospId,
         bloodGroup: _selectedBloodGroup,
         unitsRequired: _units,
         urgency: _urgency,
@@ -49,9 +50,9 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       );
 
       await hospProvider.loadHospitalData(
-        hospitalId: hosp.id,
-        hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-        hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+        hospitalId: hospId,
+        hospitalLat: (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat,
+        hospitalLng: (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng,
       );
 
       if (!mounted) return;
