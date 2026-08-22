@@ -59,7 +59,7 @@ export function AdminDashboard() {
       return;
     }
     fetchStats();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleRefresh = () => {
     setRefreshing(true);

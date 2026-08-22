@@ -22,7 +22,7 @@ import { PledgeDonationModal } from "@/components/donor/PledgeDonationModal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { DonationPledgeItem, DonorImpactStats } from "@/types";
 import { calculateHaversineDistance, calculateTravelTimeMinutes } from "@/lib/distanceEngine";
-import { evaluateBloodMatch } from "@/lib/bloodMatchingEngine";
+import { evaluateBloodMatch, isBloodCompatible } from "@/lib/bloodMatchingEngine";
 
 interface DonorData {
   id: string;
@@ -51,19 +51,14 @@ export function DonorDashboard() {
   const [pledgeModalOpen, setPledgeModalOpen] = useState(false);
 
   const loadDonorData = async () => {
+    if (!session?.user?.id) return;
     try {
-      let myProfile: DonorData | null = null;
-      try {
-        myProfile = await api.get<DonorData>(`/donors/user/${session?.user.id}`);
-      } catch {
-        const donors = await api.get<DonorData[]>("/donors");
-        myProfile = donors.find((d) => String(d.user_id) === String(session?.user.id)) || null;
-      }
+      const myProfile = await api.get<DonorData>(`/donors/user/${session.user.id}`);
 
       if (myProfile) {
         setDonor(myProfile);
-        const [reqs, pledges, historyStats] = await Promise.all([
-          api.get<DonorRequestItem[]>(`/blood-requests/donor/${myProfile.id}`).catch(() => []),
+        const [allReqs, pledges, historyStats] = await Promise.all([
+          api.get<DonorRequestItem[]>("/blood-requests").catch(() => []),
           api.get<DonationPledgeItem[]>(`/donation-pledges/donor/${myProfile.id}`).catch(() => []),
           api.get<DonorImpactStats>(`/donation-history/donor/${myProfile.id}`).catch(() => null),
         ]);
@@ -72,7 +67,7 @@ export function DonorDashboard() {
         const donorLng = myProfile.longitude || -74.006;
         const donorGroup = myProfile.blood_group || "O+";
 
-        const enriched = reqs
+        const enriched = allReqs
           .filter((r) => r.status === "searching")
           .map((r) => {
             const hLat = r.hospital_latitude || 0;
@@ -86,6 +81,7 @@ export function DonorDashboard() {
             }
 
             const match = evaluateBloodMatch(donorGroup, r.blood_group);
+            const compatible = isBloodCompatible(donorGroup, r.blood_group);
 
             return {
               ...r,
@@ -97,7 +93,25 @@ export function DonorDashboard() {
               badgeBg: match.badgeBg,
               badgeColor: match.badgeColor,
               badgeBorder: match.badgeBorder,
+              isCompatible: compatible,
             };
+          })
+          .sort((a, b) => {
+            // Compatible / Exact matches first
+            if (Boolean(a.isCompatible) !== Boolean(b.isCompatible)) {
+              return a.isCompatible ? -1 : 1;
+            }
+            // Higher match score first
+            if ((b.matchScore || 0) !== (a.matchScore || 0)) {
+              return (b.matchScore || 0) - (a.matchScore || 0);
+            }
+            // Urgency weighting
+            const urgencyWeight: Record<string, number> = { emergency: 3, urgent: 2, normal: 1 };
+            const uA = urgencyWeight[a.urgency] || 0;
+            const uB = urgencyWeight[b.urgency] || 0;
+            if (uB !== uA) return uB - uA;
+            // Nearest distance first
+            return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
           });
 
         setMatchingRequests(enriched);
@@ -120,8 +134,8 @@ export function DonorDashboard() {
           );
         }
       }
-    } catch {
-      showToast("Failed to load donor portal", "error");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to load donor portal", "error");
     } finally {
       setLoading(false);
     }
@@ -133,7 +147,7 @@ export function DonorDashboard() {
       return;
     }
     loadDonorData();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const toggleAvailability = async () => {
     if (!donor) return;
@@ -359,28 +373,28 @@ export function DonorDashboard() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Emergency Blood Matches Near You</CardTitle>
+            <CardTitle>Recent Emergency Blood Broadcasts</CardTitle>
             <CardDescription>
-              Hospital broadcasts matching your verified blood group ({donor?.blood_group || "O+"})
+              Live hospital transfusion requirements prioritizing your verified blood type ({donor?.blood_group || "O+"})
             </CardDescription>
           </div>
           <Link
             to="/donor/requests"
             className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700"
           >
-            Open Matching Center →
+            View All ({matchingRequests.length}) →
           </Link>
         </CardHeader>
 
         {matchingRequests.length === 0 ? (
           <EmptyState
             icon={CheckCircle2}
-            title="No emergency requirements currently active"
+            title="No emergency broadcasts currently active"
             description="You will receive real-time notifications whenever local hospitals post requests matching your blood type."
           />
         ) : (
           <div className="mt-4 space-y-3">
-            {matchingRequests.slice(0, 3).map((req) => (
+            {matchingRequests.slice(0, 4).map((req) => (
               <DonorRequestCard
                 key={req.id}
                 request={req}

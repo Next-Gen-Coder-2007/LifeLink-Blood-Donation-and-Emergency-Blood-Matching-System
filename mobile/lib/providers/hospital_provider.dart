@@ -10,7 +10,10 @@ class HospitalProvider with ChangeNotifier {
   List<BloodRequestModel> _hospitalRequests = [];
   List<DonationPledgeModel> _hospitalPledges = [];
   List<DonorModel> _nearbyDonors = [];
-  Map<String, int> _inventory = {};
+  Map<String, int> _inventory = {
+    'A+': 0, 'A-': 0, 'B+': 0, 'B-': 0,
+    'AB+': 0, 'AB-': 0, 'O+': 0, 'O-': 0,
+  };
   bool _isLoading = false;
 
   List<BloodRequestModel> get hospitalRequests => _hospitalRequests;
@@ -26,6 +29,7 @@ class HospitalProvider with ChangeNotifier {
     required double hospitalLat,
     required double hospitalLng,
   }) async {
+    if (hospitalId.isEmpty) return;
     _isLoading = true;
     notifyListeners();
 
@@ -34,23 +38,48 @@ class HospitalProvider with ChangeNotifier {
         NetworkClient.get(ApiConfig.bloodRequestsByHospital(hospitalId)).catchError((_) => []),
         NetworkClient.get(ApiConfig.donationPledgesByHospital(hospitalId)).catchError((_) => []),
         NetworkClient.get(ApiConfig.donors).catchError((_) => []),
-        NetworkClient.get(ApiConfig.bloodInventoryByHospital(hospitalId)).catchError((_) => {}),
+        NetworkClient.get(ApiConfig.bloodInventoryByHospital(hospitalId)).catchError((_) => []),
       ]);
 
-      if (results[0] is List) {
+      // 1. Hospital Blood Requests
+      if (results[0] is List && (results[0] as List).isNotEmpty) {
         final rawReqs = results[0] as List;
         _hospitalRequests = rawReqs
             .map((json) => BloodRequestModel.fromJson(Map<String, dynamic>.from(json)))
             .toList();
+      } else {
+        // Fallback: fetch all blood requests and filter for this hospital
+        try {
+          final allReqs = await NetworkClient.get(ApiConfig.bloodRequests);
+          if (allReqs is List) {
+            _hospitalRequests = allReqs
+                .map((json) => BloodRequestModel.fromJson(Map<String, dynamic>.from(json)))
+                .where((r) => r.hospitalId == hospitalId)
+                .toList();
+          }
+        } catch (_) {}
       }
 
-      if (results[1] is List) {
+      // 2. Hospital Donation Pledges
+      if (results[1] is List && (results[1] as List).isNotEmpty) {
         final rawPledges = results[1] as List;
         _hospitalPledges = rawPledges
             .map((json) => DonationPledgeModel.fromJson(Map<String, dynamic>.from(json)))
             .toList();
+      } else {
+        // Fallback: fetch all pledges and filter
+        try {
+          final allPledges = await NetworkClient.get(ApiConfig.donationPledges);
+          if (allPledges is List) {
+            _hospitalPledges = allPledges
+                .map((json) => DonationPledgeModel.fromJson(Map<String, dynamic>.from(json)))
+                .where((p) => p.hospitalId == hospitalId)
+                .toList();
+          }
+        } catch (_) {}
       }
 
+      // 3. Nearby Donors
       if (results[2] is List) {
         final rawDonors = results[2] as List;
         _nearbyDonors = rawDonors
@@ -71,18 +100,35 @@ class HospitalProvider with ChangeNotifier {
           ..sort((a, b) => (a.distanceKm ?? 9999).compareTo(b.distanceKm ?? 9999));
       }
 
-      if (results[3] is Map) {
+      // 4. Blood Inventory (Refrigeration Matrix)
+      final invMap = <String, int>{
+        'A+': 0, 'A-': 0, 'B+': 0, 'B-': 0,
+        'AB+': 0, 'AB-': 0, 'O+': 0, 'O-': 0,
+      };
+
+      if (results[3] is List) {
+        for (final item in (results[3] as List)) {
+          if (item is Map && item['blood_group'] != null) {
+            invMap[item['blood_group'].toString()] = (item['units'] as num?)?.toInt() ?? 0;
+          }
+        }
+      } else if (results[3] is Map) {
         final rawInv = results[3] as Map;
-        final invMap = <String, int>{};
         if (rawInv['inventory'] is List) {
           for (final item in rawInv['inventory']) {
             if (item is Map && item['blood_group'] != null) {
               invMap[item['blood_group'].toString()] = (item['units'] as num?)?.toInt() ?? 0;
             }
           }
+        } else {
+          rawInv.forEach((key, val) {
+            if (val is num) {
+              invMap[key.toString()] = val.toInt();
+            }
+          });
         }
-        _inventory = invMap;
       }
+      _inventory = invMap;
     } catch (_) {
       // Handled
     } finally {
@@ -149,18 +195,26 @@ class HospitalProvider with ChangeNotifier {
     required String verifiedBy,
     String? notes,
   }) async {
-    final body = {
-      'pledge_id': pledgeId,
-      'hospital_id': hospitalId,
-      'donor_id': donorId,
-      'donor_name': donorName,
-      'blood_group': bloodGroup,
-      'units_donated': unitsDonated,
-      'verified_by': verifiedBy,
-      'notes': notes,
-    };
-
-    await NetworkClient.post(ApiConfig.donationHistory, body: body);
+    try {
+      await NetworkClient.post(ApiConfig.completePledge(pledgeId), body: {
+        'units': unitsDonated,
+        'remarks': notes ?? 'Donation verified by $verifiedBy',
+      });
+    } catch (_) {
+      final body = {
+        'pledge_id': pledgeId,
+        'hospital_id': hospitalId,
+        'donor_id': donorId,
+        'donor_name': donorName,
+        'blood_group': bloodGroup,
+        'units': unitsDonated,
+        'units_donated': unitsDonated,
+        'verified_by': verifiedBy,
+        'remarks': notes ?? 'Donation verified by $verifiedBy',
+        'notes': notes,
+      };
+      await NetworkClient.post(ApiConfig.donationHistory, body: body);
+    }
   }
 
   Future<void> dispatchDirectDirective({
@@ -185,11 +239,16 @@ class HospitalProvider with ChangeNotifier {
     required String bloodGroup,
     required int newUnits,
   }) async {
-    await NetworkClient.put(ApiConfig.bloodInventoryByHospital(hospitalId), body: {
-      'blood_group': bloodGroup,
-      'units': newUnits,
-    });
     _inventory[bloodGroup] = newUnits;
     notifyListeners();
+
+    try {
+      await NetworkClient.put(ApiConfig.bloodInventoryByHospital(hospitalId), body: {
+        'blood_group': bloodGroup,
+        'units': newUnits,
+      });
+    } catch (_) {
+      // Handled
+    }
   }
 }

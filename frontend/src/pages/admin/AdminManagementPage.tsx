@@ -52,7 +52,7 @@ export function AdminManagementPage({ type }: { type: AdminManagementType }) {
       return;
     }
     loadData();
-  }, [type, session, navigate]);
+  }, [type, session?.user?.id, session?.user?.role, navigate]);
 
   const handleDelete = async (id: string) => {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}? Cascade actions may apply.`)) return;

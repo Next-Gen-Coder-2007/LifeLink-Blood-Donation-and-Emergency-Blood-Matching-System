@@ -79,6 +79,85 @@ export const getUserById = async (req, res, next) => {
   }
 };
 
+export const updateUser = async (req, res, next) => {
+  try {
+    const { user_id } = req.params;
+    const { name, email, password, password_hash } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      throw new AppError('Invalid user ID', 400);
+    }
+
+    const user = await User.findById(user_id);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const existing = await User.findOne({
+        email: email.toLowerCase().trim(),
+        _id: { $ne: user._id },
+      });
+      if (existing) {
+        throw new AppError('Email is already registered by another user', 400);
+      }
+      user.email = email.toLowerCase().trim();
+    }
+
+    if (name && name.trim()) {
+      user.name = name.trim();
+      if (user.role === 'hospital') {
+        await Hospital.findOneAndUpdate({ user_id: user._id }, { hospital_name: name.trim() });
+      }
+    }
+
+    const pwd = password_hash || password;
+    if (pwd && pwd.trim()) {
+      user.password_hash = pwd.trim();
+    }
+
+    await user.save();
+
+    let profileId = null;
+    let bloodGroup = null;
+
+    if (user.role === 'donor') {
+      const donor = await Donor.findOne({ user_id: user._id }).lean();
+      if (donor) {
+        profileId = donor._id.toString();
+        bloodGroup = donor.blood_group;
+      }
+    } else if (user.role === 'hospital') {
+      const hospital = await Hospital.findOne({ user_id: user._id }).lean();
+      if (hospital) {
+        profileId = hospital._id.toString();
+      }
+    }
+
+    return res.status(200).json({
+      message: 'User profile updated successfully',
+      id: user._id.toString(),
+      user_id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profile_id: profileId,
+      blood_group: bloodGroup,
+      user: {
+        id: user._id.toString(),
+        user_id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_id: profileId,
+        blood_group: bloodGroup,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteUser = async (req, res, next) => {
   try {
     const { user_id } = req.params;

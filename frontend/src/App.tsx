@@ -20,6 +20,7 @@ import {
   HospitalBloodBank,
   HospitalBloodRequests,
   HospitalDonorsMapPage,
+  HospitalSettingsPage,
   AdminLoginPage,
   AdminDashboard,
   AdminManagementPage,
@@ -89,6 +90,7 @@ function AppRoutes() {
         <Route path="/donor/dashboard" element={<AppLayout><DonorDashboard /></AppLayout>} />
         <Route path="/donor/requests" element={<AppLayout><DonorBloodRequests /></AppLayout>} />
         <Route path="/donor/profile" element={<AppLayout><DonorProfilePage /></AppLayout>} />
+        <Route path="/donor/settings" element={<AppLayout><DonorProfilePage /></AppLayout>} />
         <Route path="/donor/history" element={<AppLayout><DonationHistoryPage /></AppLayout>} />
         <Route path="/donor/notifications" element={<AppLayout><NotificationsPage /></AppLayout>} />
         <Route path="/donor/map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
@@ -98,6 +100,8 @@ function AppRoutes() {
         <Route path="/hospital/dashboard" element={<AppLayout><HospitalDashboard /></AppLayout>} />
         <Route path="/hospital/blood-bank" element={<AppLayout><HospitalBloodBank /></AppLayout>} />
         <Route path="/hospital/requests" element={<AppLayout><HospitalBloodRequests /></AppLayout>} />
+        <Route path="/hospital/settings" element={<AppLayout><HospitalSettingsPage /></AppLayout>} />
+        <Route path="/hospital/profile" element={<AppLayout><HospitalSettingsPage /></AppLayout>} />
         <Route path="/hospital/map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
         <Route path="/hospital/donors-map" element={<AppLayout><HospitalDonorsMapPage /></AppLayout>} />
 

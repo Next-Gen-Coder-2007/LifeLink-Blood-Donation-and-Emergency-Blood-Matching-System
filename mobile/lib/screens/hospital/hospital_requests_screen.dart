@@ -67,11 +67,12 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                if (hosp != null) {
+                final hospId = hosp?.id ?? auth.user?.profileId;
+                if (hospId != null && hospId.isNotEmpty) {
                   await hospProvider.loadHospitalData(
-                    hospitalId: hosp.id,
-                    hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-                    hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+                    hospitalId: hospId,
+                    hospitalLat: (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat,
+                    hospitalLng: (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng,
                   );
                 }
               },

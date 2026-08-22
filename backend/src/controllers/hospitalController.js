@@ -142,7 +142,7 @@ export const getHospitalByUserId = async (req, res, next) => {
     const { user_id } = req.params;
 
     const query = mongoose.Types.ObjectId.isValid(user_id)
-      ? { user_id: new mongoose.Types.ObjectId(user_id) }
+      ? { $or: [{ user_id: new mongoose.Types.ObjectId(user_id) }, { user_id: String(user_id) }] }
       : { user_id: String(user_id) };
 
     const hospital = await Hospital.findOne(query).lean();
@@ -169,11 +169,11 @@ export const getHospitalById = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(hospital_id) }, { _id: String(hospital_id) }] }
+      : { _id: String(hospital_id) };
 
-    const hospital = await Hospital.findById(hospital_id).lean();
+    const hospital = await Hospital.findOne(query).lean();
     if (!hospital) {
       throw new AppError('Hospital not found', 404);
     }
@@ -197,12 +197,12 @@ export const updateHospital = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(hospital_id) }, { _id: String(hospital_id) }] }
+      : { _id: String(hospital_id) };
 
     const updates = { ...req.body };
-    const hospital = await Hospital.findByIdAndUpdate(hospital_id, updates, {
+    const hospital = await Hospital.findOneAndUpdate(query, updates, {
       new: true,
       runValidators: true,
     });

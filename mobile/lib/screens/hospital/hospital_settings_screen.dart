@@ -2,29 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/app_icons.dart';
 import '../../config/theme.dart';
-import '../../core/blood_matching_engine.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/blood_group_badge.dart';
+import '../../providers/hospital_provider.dart';
 import '../auth/login_screen.dart';
 
-class DonorProfileScreen extends StatefulWidget {
-  const DonorProfileScreen({super.key});
+class HospitalSettingsScreen extends StatefulWidget {
+  const HospitalSettingsScreen({super.key});
 
   @override
-  State<DonorProfileScreen> createState() => _DonorProfileScreenState();
+  State<HospitalSettingsScreen> createState() => _HospitalSettingsScreenState();
 }
 
-class _DonorProfileScreenState extends State<DonorProfileScreen> {
+class _HospitalSettingsScreenState extends State<HospitalSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  late TextEditingController _emergencyController;
   late TextEditingController _addressController;
-  late TextEditingController _lastDonationController;
   late TextEditingController _passwordController;
 
-  String _selectedBloodGroup = 'O+';
-  bool _availability = true;
   bool _isSaving = false;
   bool _isInitialized = false;
 
@@ -34,16 +31,13 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     if (!_isInitialized) {
       final auth = context.read<AuthProvider>();
       final user = auth.user;
-      final donor = auth.donorProfile;
+      final hosp = auth.hospitalProfile;
 
-      _selectedBloodGroup = donor?.bloodGroup ?? user?.bloodGroup ?? 'O+';
-      _availability = donor?.availability ?? true;
-
-      _nameController = TextEditingController(text: donor?.donorName ?? user?.name ?? '');
+      _nameController = TextEditingController(text: hosp?.hospitalName ?? user?.name ?? '');
       _emailController = TextEditingController(text: user?.email ?? '');
-      _phoneController = TextEditingController(text: donor?.phone ?? '');
-      _addressController = TextEditingController(text: donor?.address ?? '');
-      _lastDonationController = TextEditingController(text: donor?.lastDonationDate ?? '');
+      _phoneController = TextEditingController(text: hosp?.phone ?? '');
+      _emergencyController = TextEditingController(text: hosp?.emergencyContact ?? '');
+      _addressController = TextEditingController(text: hosp?.address ?? '');
       _passwordController = TextEditingController();
 
       _isInitialized = true;
@@ -55,8 +49,8 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _emergencyController.dispose();
     _addressController.dispose();
-    _lastDonationController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -66,6 +60,8 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     setState(() => _isSaving = true);
 
     final auth = context.read<AuthProvider>();
+    final hospProvider = context.read<HospitalProvider>();
+
     try {
       // 1. Update user account details (name, email, password)
       await auth.updateUserProfile(
@@ -74,19 +70,28 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
         password: _passwordController.text.trim().isNotEmpty ? _passwordController.text.trim() : null,
       );
 
-      // 2. Update donor profile details
-      await auth.updateDonorProfile(
+      // 2. Update hospital facility details
+      await auth.updateHospitalProfile(
+        hospitalName: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
-        bloodGroup: _selectedBloodGroup,
+        emergencyContact: _emergencyController.text.trim(),
         address: _addressController.text.trim(),
-        availability: _availability,
-        lastDonationDate: _lastDonationController.text.trim().isNotEmpty ? _lastDonationController.text.trim() : null,
       );
+
+      // 3. Reload hospital data
+      final hospId = auth.hospitalProfile?.id ?? auth.user?.profileId;
+      if (hospId != null && hospId.isNotEmpty) {
+        await hospProvider.loadHospitalData(
+          hospitalId: hospId,
+          hospitalLat: auth.hospitalProfile?.latitude ?? auth.userLat,
+          hospitalLng: auth.hospitalProfile?.longitude ?? auth.userLng,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Profile and settings updated successfully!'),
+          content: const Text('Hospital facility settings updated successfully!'),
           backgroundColor: AppTheme.medicalEmerald,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -97,7 +102,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update profile: $e'),
+          content: Text('Failed to update hospital settings: $e'),
           backgroundColor: AppTheme.primaryRed,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -121,7 +126,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
           ],
         ),
         content: const Text(
-          'Are you sure you want to sign out from your LifeLink donor account?',
+          'Are you sure you want to sign out from the Hospital Command Portal?',
           style: TextStyle(color: AppTheme.slate600, fontSize: 14),
         ),
         actions: [
@@ -155,10 +160,11 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
+    final hosp = auth.hospitalProfile;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donor Settings & Profile'),
+        title: const Text('Hospital Facility Settings'),
         actions: [
           IconButton(
             onPressed: _confirmLogout,
@@ -174,7 +180,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar & Header Card
+              // Hospital Header Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -185,21 +191,19 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 34,
-                      backgroundColor: AppTheme.primaryRedLight,
-                      child: Text(
-                        (user?.name.isNotEmpty == true ? user!.name.substring(0, 1) : 'D').toUpperCase(),
-                        style: const TextStyle(
-                          color: AppTheme.primaryRed,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                        ),
+                    Container(
+                      height: 64,
+                      width: 64,
+                      decoration: BoxDecoration(
+                        color: AppTheme.medicalBlueLight,
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      child: const Icon(LucideIcons.building, size: 32, color: AppTheme.medicalBlue),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      user?.name ?? 'Volunteer Donor',
+                      hosp?.hospitalName ?? user?.name ?? 'Medical Facility',
+                      textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.slate900),
                     ),
                     const SizedBox(height: 3),
@@ -207,16 +211,26 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                       user?.email ?? '',
                       style: const TextStyle(fontSize: 12, color: AppTheme.slate500),
                     ),
-                    const SizedBox(height: 12),
-                    BloodGroupBadge(bloodGroup: _selectedBloodGroup, isLarge: true),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.medicalBlueLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'REGISTERED MEDICAL CENTER',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.medicalBlue),
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Section 1: Donor & Medical Profile
+              // Section 1: Medical Facility Details
               const Text(
-                'Donor & Contact Information',
+                'Facility & Triage Information',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppTheme.slate900),
               ),
               const SizedBox(height: 10),
@@ -229,131 +243,50 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                   border: Border.all(color: AppTheme.slate200),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Full Name Field
+                    // Facility Name Field
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: Icon(LucideIcons.user, size: 18, color: AppTheme.slate400),
+                        labelText: 'Facility / Hospital Name',
+                        prefixIcon: Icon(LucideIcons.building, size: 18, color: AppTheme.slate400),
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter hospital name' : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Phone Field
+                    // Hotline Phone
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
-                        labelText: 'Phone Number',
+                        labelText: 'Hospital Hotline Phone',
                         prefixIcon: Icon(LucideIcons.phone, size: 18, color: AppTheme.slate400),
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter phone number' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter hotline phone' : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Blood Group Selector
-                    DropdownButtonFormField<String>(
-                      initialValue: BloodMatchingEngine.allBloodGroups.contains(_selectedBloodGroup)
-                          ? _selectedBloodGroup
-                          : 'O+',
+                    // Emergency Triage Contact
+                    TextFormField(
+                      controller: _emergencyController,
+                      keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
-                        labelText: 'Blood Group Type',
-                        prefixIcon: Icon(LucideIcons.droplet, size: 18, color: AppTheme.primaryRed),
+                        labelText: '24/7 Emergency Triage Contact',
+                        prefixIcon: Icon(LucideIcons.phoneCall, size: 18, color: AppTheme.primaryRed),
                       ),
-                      items: BloodMatchingEngine.allBloodGroups.map((bg) {
-                        return DropdownMenuItem(
-                          value: bg,
-                          child: Text(
-                            '$bg Blood Group',
-                            style: const TextStyle(fontWeight: FontWeight.w800, color: AppTheme.slate900),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedBloodGroup = val);
-                      },
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter emergency triage contact' : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Address Field
+                    // Physical Address
                     TextFormField(
                       controller: _addressController,
                       decoration: const InputDecoration(
-                        labelText: 'Address / City Area',
+                        labelText: 'Physical Facility Address',
                         prefixIcon: Icon(LucideIcons.mapPin, size: 18, color: AppTheme.slate400),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Last Donation Date
-                    TextFormField(
-                      controller: _lastDonationController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Last Donated Date (YYYY-MM-DD)',
-                        prefixIcon: Icon(LucideIcons.calendar, size: 18, color: AppTheme.slate400),
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          _lastDonationController.text =
-                              "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Availability Toggle
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _availability ? AppTheme.medicalEmeraldLight : AppTheme.slate50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _availability ? const Color(0xFFA7F3D0) : AppTheme.slate200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            LucideIcons.activity,
-                            size: 20,
-                            color: _availability ? AppTheme.medicalEmerald : AppTheme.slate400,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Ready to Donate',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: _availability ? AppTheme.medicalEmerald : AppTheme.slate700,
-                                  ),
-                                ),
-                                const Text(
-                                  'Appear on hospital emergency matching radar',
-                                  style: TextStyle(fontSize: 11, color: AppTheme.slate500),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: _availability,
-                            activeTrackColor: AppTheme.medicalEmerald,
-                            activeThumbColor: Colors.white,
-                            onChanged: (val) => setState(() => _availability = val),
-                          ),
-                        ],
-                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter hospital address' : null,
                     ),
                   ],
                 ),
@@ -380,7 +313,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Login Email Address',
+                        labelText: 'Portal Login Email',
                         prefixIcon: Icon(LucideIcons.mail, size: 18, color: AppTheme.slate400),
                       ),
                       validator: (v) => (v == null || !v.contains('@')) ? 'Please enter a valid email' : null,
@@ -419,11 +352,11 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                         )
                       : const Icon(LucideIcons.save, size: 18),
                   label: Text(
-                    _isSaving ? 'Saving Changes...' : 'Save Profile & Settings',
+                    _isSaving ? 'Saving Changes...' : 'Save Hospital Settings',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
+                    backgroundColor: AppTheme.medicalBlue,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
@@ -431,13 +364,13 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Logout Button
+              // Sign Out Button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _confirmLogout,
                   icon: const Icon(LucideIcons.logOut, size: 16, color: AppTheme.primaryRed),
-                  label: const Text('Sign Out from LifeLink', style: TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.w800)),
+                  label: const Text('Sign Out from Hospital Portal', style: TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.w800)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFFECACA)),
                     backgroundColor: AppTheme.primaryRedLight,

@@ -43,12 +43,12 @@ export function NotificationsPage() {
   };
 
   useEffect(() => {
-    if (!session) {
+    if (!session?.user?.id) {
       navigate("/login");
       return;
     }
     fetchNotifications();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const handleMarkAsRead = async (id: string) => {
     try {

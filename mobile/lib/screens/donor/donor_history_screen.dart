@@ -90,16 +90,16 @@ class DonorHistoryScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppTheme.slate200),
                   ),
-                  child: Column(
+                  child: const Column(
                     children: [
-                      const Icon(LucideIcons.award, size: 44, color: AppTheme.slate300),
-                      const SizedBox(height: 12),
-                      const Text(
+                      Icon(LucideIcons.award, size: 44, color: AppTheme.slate300),
+                      SizedBox(height: 12),
+                      Text(
                         'No Verified Donations Yet',
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.slate900),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'When you pledge and complete a blood donation at a registered hospital, your verified digital certificate will appear here.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: AppTheme.slate500),

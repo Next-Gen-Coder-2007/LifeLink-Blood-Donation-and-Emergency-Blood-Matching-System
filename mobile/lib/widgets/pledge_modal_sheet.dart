@@ -156,8 +156,9 @@ class _PledgeModalSheetState extends State<PledgeModalSheet> {
                   ? null
                   : () async {
                       setState(() => _isSubmitting = true);
+                      final navigator = Navigator.of(context);
                       await widget.onConfirm(_selectedArrival, _notesController.text.trim());
-                      if (mounted) Navigator.pop(context);
+                      if (mounted) navigator.pop();
                     },
               child: _isSubmitting
                   ? const SizedBox(

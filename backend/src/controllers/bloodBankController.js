@@ -9,11 +9,11 @@ export const getBloodBank = async (req, res, next) => {
   try {
     const { hospital_id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const query = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ hospital_id: new mongoose.Types.ObjectId(hospital_id) }, { hospital_id: String(hospital_id) }] }
+      : { hospital_id: String(hospital_id) };
 
-    const inventory = await BloodInventory.find({ hospital_id }).lean();
+    const inventory = await BloodInventory.find(query).lean();
 
     const inventoryMap = {};
     inventory.forEach((item) => {
@@ -36,11 +36,11 @@ export const updateBloodBank = async (req, res, next) => {
     const { hospital_id } = req.params;
     let { blood_group, units } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(hospital_id)) {
-      throw new AppError('Invalid hospital ID', 400);
-    }
+    const hospQuery = mongoose.Types.ObjectId.isValid(hospital_id)
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(hospital_id) }, { _id: String(hospital_id) }] }
+      : { _id: String(hospital_id) };
 
-    const hospital = await Hospital.findById(hospital_id);
+    const hospital = await Hospital.findOne(hospQuery);
     if (!hospital) {
       throw new AppError('Hospital not found', 404);
     }
@@ -61,7 +61,7 @@ export const updateBloodBank = async (req, res, next) => {
     }
 
     await BloodInventory.findOneAndUpdate(
-      { hospital_id, blood_group },
+      { hospital_id: hospital._id, blood_group },
       {
         $set: {
           units: unitCount,

@@ -4,6 +4,7 @@ import { Donor } from '../models/Donor.js';
 import { Hospital } from '../models/Hospital.js';
 import { User } from '../models/User.js';
 import { BloodInventory } from '../models/BloodInventory.js';
+import { BloodRequest } from '../models/BloodRequest.js';
 import { Notification } from '../models/Notification.js';
 import { AppError } from '../middlewares/errorMiddleware.js';
 
@@ -152,7 +153,7 @@ export const getHospitalHistory = async (req, res, next) => {
 
 export const createDirectDonation = async (req, res, next) => {
   try {
-    const { donor_id, hospital_id, blood_group, units = 1, remarks } = req.body;
+    const { donor_id, hospital_id, blood_group, units = 1, remarks, blood_request_id } = req.body;
 
     if (!donor_id || !mongoose.Types.ObjectId.isValid(donor_id)) {
       throw new AppError('Invalid donor ID', 400);
@@ -161,9 +162,12 @@ export const createDirectDonation = async (req, res, next) => {
       throw new AppError('Invalid hospital ID', 400);
     }
 
-    const [donor, hospital] = await Promise.all([
+    const [donor, hospital, bloodRequest] = await Promise.all([
       Donor.findById(donor_id),
       Hospital.findById(hospital_id),
+      blood_request_id && mongoose.Types.ObjectId.isValid(blood_request_id)
+        ? BloodRequest.findById(blood_request_id)
+        : null,
     ]);
 
     if (!donor) throw new AppError('Donor not found', 404);
@@ -178,6 +182,7 @@ export const createDirectDonation = async (req, res, next) => {
     const historyEntry = await DonationHistory.create({
       donor_id,
       hospital_id,
+      blood_request_id: bloodRequest ? bloodRequest._id : (blood_request_id || null),
       blood_group: group,
       units: unitsCount,
       donation_date: new Date(),
@@ -195,6 +200,40 @@ export const createDirectDonation = async (req, res, next) => {
       { $inc: { units: unitsCount } },
       { upsert: true, new: true }
     );
+
+    // Update Blood Request status & remaining units if matched
+    if (bloodRequest) {
+      if (!bloodRequest.initial_units_required) {
+        bloodRequest.initial_units_required = Math.max(1, (bloodRequest.units_required || 0) + unitsCount);
+      }
+
+      const historyAgg = await DonationHistory.aggregate([
+        {
+          $match: {
+            blood_request_id: bloodRequest._id,
+            status: { $in: ['verified', 'completed'] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalUnits: { $sum: '$units' },
+          },
+        },
+      ]);
+
+      const totalUnitsDonated = (historyAgg[0]?.totalUnits || 0);
+      const initialTarget = bloodRequest.initial_units_required;
+      const remainingUnits = Math.max(0, initialTarget - totalUnitsDonated);
+
+      bloodRequest.units_required = remainingUnits;
+
+      if (remainingUnits === 0 || totalUnitsDonated >= initialTarget) {
+        bloodRequest.status = 'fulfilled';
+      }
+
+      await bloodRequest.save();
+    }
 
     // Update Donor last donation date
     donor.last_donation_date = new Date().toISOString().split('T')[0];

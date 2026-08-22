@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   ArrowRight,
   ShieldCheck,
+  Settings,
 } from "lucide-react";
 import { api, getSession } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
@@ -42,6 +43,7 @@ interface RequestItem {
   id: string;
   blood_group: string;
   units_required: number;
+  initial_units_required?: number;
   urgency: string;
   status: string;
   patient_name?: string;
@@ -64,15 +66,9 @@ export function HospitalDashboard() {
   const [prefilledGroup, setPrefilledGroup] = useState<string | undefined>(undefined);
 
   const loadHospital = async () => {
+    if (!session?.user?.id) return;
     try {
-      let current: HospitalData | null = null;
-      try {
-        current = await api.get<HospitalData>(`/hospitals/user/${session?.user.id}`);
-      } catch {
-        const hospitals = await api.get<HospitalData[]>("/hospitals");
-        current = hospitals.find((h) => String(h.user_id) === String(session?.user.id)) || null;
-      }
-
+      const current = await api.get<HospitalData>(`/hospitals/user/${session.user.id}`);
       if (current) {
         setHospital(current);
         const [inventory, reqs] = await Promise.all([
@@ -86,8 +82,8 @@ export function HospitalDashboard() {
         setStockMap(map);
         setRequests(reqs);
       }
-    } catch {
-      showToast("Unable to load hospital dashboard", "error");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Unable to load hospital dashboard", "error");
     } finally {
       setLoading(false);
     }
@@ -99,7 +95,7 @@ export function HospitalDashboard() {
       return;
     }
     loadHospital();
-  }, [session, navigate]);
+  }, [session?.user?.id, session?.user?.role, navigate]);
 
   const totalUnits = Object.values(stockMap).reduce((sum, units) => sum + units, 0);
   const activeRequests = requests.filter((r) => r.status === "searching");
@@ -192,6 +188,13 @@ export function HospitalDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/hospital/settings"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+          >
+            <Settings className="h-4 w-4 text-slate-500" />
+            Facility Settings
+          </Link>
           <Link
             to="/hospital/map"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
@@ -358,7 +361,10 @@ export function HospitalDashboard() {
                     <UrgencyBadge urgency={r.urgency} />
                     <div>
                       <p className="text-xs font-extrabold text-slate-900">
-                        {r.units_required} Units of <span className="text-red-600 font-black">{r.blood_group}</span>
+                        {isLocked
+                          ? `Fulfilled (${r.initial_units_required || r.units_required || 1} Units Satisfied) • `
+                          : `${r.units_required} Units of `}
+                        <span className="text-red-600 font-black">{r.blood_group}</span>
                         {r.patient_name && <span className="ml-1 font-normal text-slate-500">({r.patient_name})</span>}
                       </p>
                       <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">

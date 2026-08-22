@@ -99,9 +99,9 @@ class _DirectDirectiveSheetState extends State<DirectDirectiveSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Dispatch Direct Directive',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.slate900,
@@ -187,12 +187,13 @@ class _DirectDirectiveSheetState extends State<DirectDirectiveSheet> {
                   ? null
                   : () async {
                       setState(() => _isSubmitting = true);
+                      final navigator = Navigator.of(context);
                       await widget.onDispatch(
                         _messageController.text.trim(),
                         _units,
                         _urgency,
                       );
-                      if (mounted) Navigator.pop(context);
+                      if (mounted) navigator.pop();
                     },
               icon: const Icon(LucideIcons.send, size: 14),
               label: _isSubmitting

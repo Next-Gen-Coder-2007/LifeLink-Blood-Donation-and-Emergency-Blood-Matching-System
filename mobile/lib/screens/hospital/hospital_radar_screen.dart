@@ -25,11 +25,12 @@ class HospitalRadarScreen extends StatelessWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (hosp != null) {
+          final hospId = hosp?.id ?? auth.user?.profileId;
+          if (hospId != null && hospId.isNotEmpty) {
             await hospProvider.loadHospitalData(
-              hospitalId: hosp.id,
-              hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-              hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+              hospitalId: hospId,
+              hospitalLat: (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat,
+              hospitalLng: (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng,
             );
           }
         },
@@ -102,18 +103,19 @@ class HospitalRadarScreen extends StatelessWidget {
                             const Spacer(),
                             ElevatedButton.icon(
                               onPressed: () {
+                                final currentHospId = hosp?.id ?? auth.user?.profileId;
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
                                   builder: (_) => DirectDirectiveSheet(
                                     donor: d,
-                                    hospitalName: hosp?.hospitalName ?? 'Medical Facility',
+                                    hospitalName: hosp?.hospitalName ?? auth.user?.name ?? 'Medical Facility',
                                     onDispatch: (msg, units, urg) async {
-                                      if (hosp != null) {
+                                      if (currentHospId != null && currentHospId.isNotEmpty) {
                                         await hospProvider.dispatchDirectDirective(
                                           donorId: d.id,
-                                          hospitalId: hosp.id,
+                                          hospitalId: currentHospId,
                                           message: msg,
                                           unitsNeeded: units,
                                           urgency: urg,

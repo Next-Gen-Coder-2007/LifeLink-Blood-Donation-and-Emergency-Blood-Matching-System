@@ -5,7 +5,6 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/donor_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../../widgets/blood_group_badge.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/request_card.dart';
 import '../../widgets/pledge_modal_sheet.dart';
@@ -155,7 +154,8 @@ class DonorDashboardScreen extends StatelessWidget {
                       onChanged: (val) {
                         auth.updateDonorAvailability(val);
                       },
-                      activeColor: AppTheme.medicalEmerald,
+                      activeTrackColor: AppTheme.medicalEmerald,
+                      activeThumbColor: Colors.white,
                     ),
                   ],
                 ),

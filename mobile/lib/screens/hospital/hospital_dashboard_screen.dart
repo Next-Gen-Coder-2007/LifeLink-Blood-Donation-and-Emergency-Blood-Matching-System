@@ -10,6 +10,7 @@ import '../../widgets/stat_tile.dart';
 import '../../widgets/urgency_pill.dart';
 import '../common/notifications_screen.dart';
 import 'create_request_screen.dart';
+import 'hospital_settings_screen.dart';
 
 class HospitalDashboardScreen extends StatelessWidget {
   const HospitalDashboardScreen({super.key});
@@ -79,7 +80,14 @@ class HospitalDashboardScreen extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HospitalSettingsScreen()));
+            },
+            icon: const Icon(LucideIcons.settings, size: 20, color: AppTheme.slate700),
+            tooltip: 'Facility Settings',
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -92,15 +100,16 @@ class HospitalDashboardScreen extends StatelessWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (hosp != null) {
+          final hospId = hosp?.id ?? auth.user?.profileId;
+          if (hospId != null && hospId.isNotEmpty) {
             await hospProvider.loadHospitalData(
-              hospitalId: hosp.id,
-              hospitalLat: hosp.latitude != 0 ? hosp.latitude : auth.userLat,
-              hospitalLng: hosp.longitude != 0 ? hosp.longitude : auth.userLng,
+              hospitalId: hospId,
+              hospitalLat: (hosp?.latitude != null && hosp!.latitude != 0) ? hosp.latitude : auth.userLat,
+              hospitalLng: (hosp?.longitude != null && hosp!.longitude != 0) ? hosp.longitude : auth.userLng,
             );
-            if (auth.user != null) {
-              await notifProvider.fetchNotifications(auth.user!.id, role: 'hospital');
-            }
+          }
+          if (auth.user != null) {
+            await notifProvider.fetchNotifications(auth.user!.id, role: 'hospital');
           }
         },
         child: SingleChildScrollView(
@@ -226,16 +235,16 @@ class HospitalDashboardScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppTheme.slate200),
                   ),
-                  child: Column(
+                  child: const Column(
                     children: [
-                      const Icon(LucideIcons.radio, size: 36, color: AppTheme.slate300),
-                      const SizedBox(height: 10),
-                      const Text(
+                      Icon(LucideIcons.radio, size: 36, color: AppTheme.slate300),
+                      SizedBox(height: 10),
+                      Text(
                         'No Active Broadcasts',
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.slate900),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Tap the button below to broadcast an emergency blood requirement to nearby volunteer donors.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: AppTheme.slate500),
@@ -325,9 +334,10 @@ class HospitalDashboardScreen extends StatelessWidget {
                 unitsDonated: 1,
                 verifiedBy: auth.hospitalProfile?.hospitalName ?? 'Hospital Staff',
               );
-              if (auth.hospitalProfile != null) {
+              final hospId = auth.hospitalProfile?.id ?? auth.user?.profileId;
+              if (hospId != null && hospId.isNotEmpty) {
                 provider.loadHospitalData(
-                  hospitalId: auth.hospitalProfile!.id,
+                  hospitalId: hospId,
                   hospitalLat: auth.userLat,
                   hospitalLng: auth.userLng,
                 );
