@@ -235,16 +235,16 @@ class HospitalDashboardScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppTheme.slate200),
                   ),
-                  child: Column(
+                  child: const Column(
                     children: [
-                      const Icon(LucideIcons.radio, size: 36, color: AppTheme.slate300),
-                      const SizedBox(height: 10),
-                      const Text(
+                      Icon(LucideIcons.radio, size: 36, color: AppTheme.slate300),
+                      SizedBox(height: 10),
+                      Text(
                         'No Active Broadcasts',
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.slate900),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Tap the button below to broadcast an emergency blood requirement to nearby volunteer donors.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: AppTheme.slate500),

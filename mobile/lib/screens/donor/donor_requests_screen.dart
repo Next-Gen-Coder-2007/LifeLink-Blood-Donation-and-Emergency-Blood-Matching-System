@@ -197,23 +197,23 @@ class _DonorRequestsScreenState extends State<DonorRequestsScreen> {
               child: donorProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : filtered.isEmpty
-                      ? Center(
+                      ? const Center(
                           child: Padding(
-                            padding: const EdgeInsets.all(32),
+                            padding: EdgeInsets.all(32),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(LucideIcons.droplets, size: 48, color: AppTheme.slate300),
-                                const SizedBox(height: 12),
-                                const Text(
+                                Icon(LucideIcons.droplets, size: 48, color: AppTheme.slate300),
+                                SizedBox(height: 12),
+                                Text(
                                   'No Requests Found',
                                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.slate900),
                                 ),
-                                const SizedBox(height: 6),
+                                SizedBox(height: 6),
                                 Text(
                                   'No active broadcasts match your current filters. Tap "All Broadcasts" or change your distance radius.',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.slate500),
+                                  style: TextStyle(fontSize: 12, color: AppTheme.slate500),
                                 ),
                               ],
                             ),

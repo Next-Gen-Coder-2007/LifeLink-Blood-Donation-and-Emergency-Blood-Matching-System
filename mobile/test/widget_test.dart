@@ -14,5 +14,7 @@ void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const LifeLinkApp());
     expect(find.byType(MaterialApp), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump();
   });
 }

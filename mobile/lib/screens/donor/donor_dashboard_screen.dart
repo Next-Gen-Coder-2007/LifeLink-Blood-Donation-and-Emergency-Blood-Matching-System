@@ -154,7 +154,8 @@ class DonorDashboardScreen extends StatelessWidget {
                       onChanged: (val) {
                         auth.updateDonorAvailability(val);
                       },
-                      activeColor: AppTheme.medicalEmerald,
+                      activeTrackColor: AppTheme.medicalEmerald,
+                      activeThumbColor: Colors.white,
                     ),
                   ],
                 ),

@@ -59,7 +59,7 @@ class NotificationsScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: notif.isRead ? Colors.white : AppTheme.primaryRedLight.withOpacity(0.5),
+                      color: notif.isRead ? Colors.white : AppTheme.primaryRedLight.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: notif.isRead ? AppTheme.slate200 : const Color(0xFFFECACA),

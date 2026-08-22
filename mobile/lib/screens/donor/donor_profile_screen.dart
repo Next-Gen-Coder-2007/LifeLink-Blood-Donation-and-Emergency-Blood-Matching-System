@@ -256,7 +256,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
 
                     // Blood Group Selector
                     DropdownButtonFormField<String>(
-                      value: BloodMatchingEngine.allBloodGroups.contains(_selectedBloodGroup)
+                      initialValue: BloodMatchingEngine.allBloodGroups.contains(_selectedBloodGroup)
                           ? _selectedBloodGroup
                           : 'O+',
                       decoration: const InputDecoration(
@@ -348,7 +348,8 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                           ),
                           Switch(
                             value: _availability,
-                            activeColor: AppTheme.medicalEmerald,
+                            activeTrackColor: AppTheme.medicalEmerald,
+                            activeThumbColor: Colors.white,
                             onChanged: (val) => setState(() => _availability = val),
                           ),
                         ],
