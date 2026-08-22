@@ -48,6 +48,7 @@ const STYLES = {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const counter = useRef(0);
+  const recentMessages = useRef<Map<string, number>>(new Map());
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -55,6 +56,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showToast = useCallback(
     (message: string, type: ToastMessage["type"] = "success") => {
+      const key = `${type}:${message.trim()}`;
+      const now = Date.now();
+      const lastShown = recentMessages.current.get(key);
+
+      // Deduplicate identical toasts within 2500ms
+      if (lastShown && now - lastShown < 2500) {
+        return;
+      }
+      recentMessages.current.set(key, now);
+
       counter.current += 1;
       const id = counter.current;
       setToasts((current) => [...current, { id, message, type }]);

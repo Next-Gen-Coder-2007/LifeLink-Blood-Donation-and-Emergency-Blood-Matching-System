@@ -33,28 +33,55 @@ export function Navbar() {
     return () => window.removeEventListener("storage", syncSession);
   }, [location.pathname]);
 
-  // Notifications polling for authenticated users
+  // Notifications polling for authenticated users (60s interval + visibility aware)
   useEffect(() => {
-    if (!session || !session.user || !session.user.id) {
+    const userId = session?.user?.id;
+    const userRole = session?.user?.role;
+    if (!userId || !userRole) {
       setUnreadCount(0);
       return;
     }
 
+    let isMounted = true;
+
     const checkNotifications = async () => {
+      // Avoid making network calls if tab is not visible
+      if (document.hidden) return;
+
       try {
         const res = await api.get<{ unread_count: number }>(
-          `/notifications/user/${session.user.id}?role=${session.user.role}`
+          `/notifications/user/${userId}?role=${userRole}`,
+          { timeoutMs: 6000 }
         );
-        setUnreadCount(res.unread_count || 0);
+        if (isMounted) {
+          setUnreadCount(res?.unread_count || 0);
+        }
       } catch {
-        // Silent catch
+        // Silently ignore background polling failures
       }
     };
 
+    // Check on mount / session change
     checkNotifications();
-    const interval = setInterval(checkNotifications, 15000);
-    return () => clearInterval(interval);
-  }, [session]);
+
+    // Check every 60 seconds (throttled from 15s)
+    const interval = setInterval(checkNotifications, 60000);
+
+    // Refresh immediately when user returns to tab
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkNotifications();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [session?.user?.id, session?.user?.role]);
 
   const handleLogout = () => {
     clearSession();
