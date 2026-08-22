@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   ArrowRight,
   ShieldCheck,
+  Settings,
 } from "lucide-react";
 import { api, getSession } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
@@ -192,6 +193,13 @@ export function HospitalDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/hospital/settings"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+          >
+            <Settings className="h-4 w-4 text-slate-500" />
+            Facility Settings
+          </Link>
           <Link
             to="/hospital/map"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition cursor-pointer"

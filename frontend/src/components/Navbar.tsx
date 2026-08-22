@@ -9,6 +9,7 @@ import {
   Building2,
   Heart,
   Shield,
+  Settings,
 } from "lucide-react";
 import { getSession, clearSession, api } from "@/lib/api";
 import { useAuthModal } from "@/context/AuthModalContext";
@@ -159,8 +160,20 @@ export function Navbar() {
                 )}
               </Link>
 
+              {/* Settings / Profile Button */}
+              <Link
+                to={role === "hospital" ? "/hospital/settings" : "/donor/profile"}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
+                title="Account & Facility Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Link>
+
               {/* User Pill with Role Indicator */}
-              <div className="hidden lg:flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+              <Link
+                to={role === "hospital" ? "/hospital/settings" : "/donor/profile"}
+                className="hidden lg:flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+              >
                 {role === "hospital" && <Building2 className="h-3.5 w-3.5 text-blue-600" />}
                 {role === "donor" && <Heart className="h-3.5 w-3.5 text-red-500" />}
                 {role === "admin" && <Shield className="h-3.5 w-3.5 text-purple-600" />}
@@ -169,7 +182,7 @@ export function Navbar() {
                 </span>
                 <span className="text-slate-400">•</span>
                 <span className="capitalize text-slate-500 text-[11px]">{role}</span>
-              </div>
+              </Link>
 
               {/* Logout Button */}
               <button
