@@ -1,25 +1,13 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-
 class ApiConfig {
   // Remote production cloud URL or local dev URL
-  static const String productionBaseUrl = 'https://lifelink-backend.onrender.com';
+  static const String productionBaseUrl = 'https://life-link-blood-donation-and-emerge-rust.vercel.app';
   static const String localAndroidUrl = 'http://10.0.2.2:8000';
   static const String localIosWebUrl = 'http://localhost:8000';
 
   static String baseUrl = _determineBaseUrl();
 
   static String _determineBaseUrl() {
-    if (kReleaseMode) {
-      return productionBaseUrl;
-    }
-    if (kIsWeb) {
-      return localIosWebUrl;
-    }
-    if (Platform.isAndroid) {
-      return localAndroidUrl;
-    }
-    return localIosWebUrl;
+    return productionBaseUrl;
   }
 
   static void setCustomBaseUrl(String url) {
