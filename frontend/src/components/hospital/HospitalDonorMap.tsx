@@ -64,7 +64,7 @@ export function HospitalDonorMap({
   const [selectedBloodGroup, setSelectedBloodGroup] = useState<string>("ALL");
   const [matchMode, setMatchMode] = useState<"all" | "exact" | "compatible" | "universal">("all");
   const [donationIntervalFilter, setDonationIntervalFilter] = useState<string>("all");
-  const [radiusFilter, setRadiusFilter] = useState<number>(25); // km, 0 = all
+  const [radiusFilter, setRadiusFilter] = useState<number>(0); // 0 = all radius / nationwide
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDonor, setSelectedDonor] = useState<DonorMapItem | null>(null);

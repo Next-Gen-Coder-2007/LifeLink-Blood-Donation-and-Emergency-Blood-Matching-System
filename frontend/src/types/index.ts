@@ -132,6 +132,7 @@ export interface DonorMapItem {
   email: string;
   blood_group: string;
   phone: string;
+  address?: string;
   latitude: number;
   longitude: number;
   availability: boolean;

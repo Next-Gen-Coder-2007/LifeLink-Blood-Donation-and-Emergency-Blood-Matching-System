@@ -17,14 +17,17 @@ import {
   ThermometerSnowflake,
   ExternalLink,
   Users,
+  Search,
+  Send,
 } from "lucide-react";
 import { api, getSession } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { BloodMatrixGrid } from "@/components/hospital/BloodMatrixGrid";
 import { CreateRequestModal } from "@/components/hospital/CreateRequestModal";
 import { VerifyDonationModal } from "@/components/hospital/VerifyDonationModal";
+import { DirectRequestModal } from "@/components/hospital/DirectRequestModal";
 import { UrgencyBadge, StatusBadge } from "@/components/ui/Badge";
-import type { DonationPledgeItem } from "@/types";
+import type { DonationPledgeItem, DonorMapItem } from "@/types";
 
 interface HospitalData {
   id: string;
@@ -62,13 +65,20 @@ export function HospitalDashboard() {
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [pledges, setPledges] = useState<DonationPledgeItem[]>([]);
+  const [donors, setDonors] = useState<DonorMapItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modals
+  // Modals & Donor Direct Ping
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [prefilledGroup, setPrefilledGroup] = useState<string | undefined>(undefined);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [selectedPledge, setSelectedPledge] = useState<DonationPledgeItem | null>(null);
+  const [directModalOpen, setDirectModalOpen] = useState(false);
+  const [targetDonor, setTargetDonor] = useState<DonorMapItem | null>(null);
+
+  // Donor Table Filter State
+  const [donorSearch, setDonorSearch] = useState("");
+  const [donorGroupFilter, setDonorGroupFilter] = useState("ALL");
 
   const loadHospital = async () => {
     if (!session?.user?.id) return;
@@ -76,10 +86,11 @@ export function HospitalDashboard() {
       const current = await api.get<HospitalData>(`/hospitals/user/${session.user.id}`);
       if (current) {
         setHospital(current);
-        const [inventory, reqs, pledgeList] = await Promise.all([
+        const [inventory, reqs, pledgeList, donorList] = await Promise.all([
           api.get<BloodStock[]>(`/hospitals/${current.id}/blood-bank`),
           api.get<RequestItem[]>(`/blood-requests/hospital/${current.id}`),
           api.get<DonationPledgeItem[]>(`/donation-pledges/hospital/${current.id}`).catch(() => []),
+          api.get<DonorMapItem[]>("/donors").catch(() => []),
         ]);
         const map: Record<string, number> = {};
         inventory.forEach((i) => {
@@ -88,6 +99,7 @@ export function HospitalDashboard() {
         setStockMap(map);
         setRequests(reqs);
         setPledges(pledgeList);
+        setDonors(donorList);
       }
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Unable to load hospital dashboard", "error");
@@ -106,8 +118,8 @@ export function HospitalDashboard() {
 
   const totalUnits = Object.values(stockMap).reduce((sum, units) => sum + units, 0);
   const activeRequests = requests.filter((r) => r.status === "searching");
-  const fulfilledRequests = requests.filter((r) => r.status === "fulfilled" || r.status === "completed");
   const activePledges = pledges.filter((p) => p.status === "pledged" || p.status === "acknowledged");
+  const availableDonors = donors.filter((d) => d.availability);
 
   // Identify low stocks (< 3 units)
   const lowStockGroups = Object.entries(stockMap).filter(([, units]) => units < 3);
@@ -169,6 +181,40 @@ export function HospitalDashboard() {
     }
   };
 
+  const handleOpenDirectPing = (donor: DonorMapItem) => {
+    setTargetDonor(donor);
+    setDirectModalOpen(true);
+  };
+
+  const handleSendDirectRequest = async (donorId: string, message: string) => {
+    if (!hospital) return;
+    try {
+      await api.post(`/donors/${donorId}/direct-request`, {
+        hospital_id: hospital.id,
+        message,
+      });
+      showToast("Direct emergency ping dispatched to donor!");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to dispatch ping", "error");
+      throw err;
+    }
+  };
+
+  // Filtered Donors List
+  const filteredDonors = donors.filter((d) => {
+    if (donorGroupFilter !== "ALL" && d.blood_group !== donorGroupFilter) return false;
+    if (donorSearch.trim()) {
+      const q = donorSearch.toLowerCase();
+      return (
+        d.donor_name.toLowerCase().includes(q) ||
+        d.blood_group.toLowerCase().includes(q) ||
+        d.phone.includes(q) ||
+        (d.address && d.address.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="py-28 text-center text-xs text-slate-500">
@@ -211,7 +257,7 @@ export function HospitalDashboard() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
           >
             <Compass className="h-4 w-4 text-red-600" />
-            Donor Radar
+            Donor Radar ({donors.length})
           </Link>
           <Link
             to="/hospital/blood-bank"
@@ -233,7 +279,7 @@ export function HospitalDashboard() {
 
       {/* Main Clinical Station Workspace Layout (2-Column Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (8 cols): KPIs, Stock Deficit, Blood Matrix, Recent Requests */}
+        {/* Left Column (8 cols): KPIs, Stock Deficit, Blood Matrix, Donor Directory, Broadcasts */}
         <div className="lg:col-span-8 space-y-6">
           {/* Integrated Telemetry KPI Ribbon */}
           <div className="grid grid-cols-2 sm:grid-cols-4 rounded-2xl border border-slate-200/80 bg-white shadow-2xs divide-y sm:divide-y-0 sm:divide-x divide-slate-100 overflow-hidden">
@@ -266,11 +312,11 @@ export function HospitalDashboard() {
 
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500">Fulfilled Cases</span>
-                <ShieldCheck className="h-4 w-4 text-slate-700" />
+                <span className="text-xs font-bold text-slate-500">Registered Donors</span>
+                <Users className="h-4 w-4 text-slate-700" />
               </div>
-              <p className="mt-1 text-2xl font-black text-slate-900 tracking-tight">{fulfilledRequests.length}</p>
-              <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Certificates Issued</p>
+              <p className="mt-1 text-2xl font-black text-slate-900 tracking-tight">{donors.length}</p>
+              <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{availableDonors.length} Available</p>
             </div>
           </div>
 
@@ -322,6 +368,99 @@ export function HospitalDashboard() {
               readonly={true}
               onBroadcastNeed={handleQuickBroadcast}
             />
+          </div>
+
+          {/* Registered Donors Live Directory */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-red-600" />
+                  Local Registered Donors ({donors.length})
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Verified volunteer donors ready for emergency response
+                </p>
+              </div>
+
+              {/* Donor Search & Blood Group Filter */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={donorGroupFilter}
+                  onChange={(e) => setDonorGroupFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 focus:outline-none"
+                >
+                  <option value="ALL">All Groups</option>
+                  {["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"].map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+
+                <div className="relative w-36 sm:w-44">
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search donors..."
+                    value={donorSearch}
+                    onChange={(e) => setDonorSearch(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-2 py-1 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {filteredDonors.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No matching donors found.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1">
+                {filteredDonors.slice(0, 10).map((d) => (
+                  <div key={d.id} className="flex items-center justify-between py-2.5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white text-xs font-black">
+                        {d.blood_group}
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                          {d.donor_name}
+                          {d.availability ? (
+                            <span className="rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.2 text-[9px] font-bold">
+                              Available
+                            </span>
+                          ) : (
+                            <span className="rounded bg-slate-100 text-slate-500 px-1.5 py-0.2 text-[9px] font-semibold">
+                              Resting
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {d.phone} • {d.address || "Area Registered"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${d.phone}`}
+                        className="rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-slate-700 hover:bg-slate-100 transition"
+                        title={`Call ${d.donor_name}`}
+                      >
+                        <Phone className="h-3.5 w-3.5 text-red-600" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDirectPing(d)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-red-600 transition cursor-pointer shadow-2xs"
+                      >
+                        <Send className="h-3 w-3" />
+                        Ping
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Active Emergency Broadcasts Table */}
@@ -396,7 +535,7 @@ export function HospitalDashboard() {
 
         {/* Right Column (4 cols): Live Donor Radar Card & Incoming Pledges */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Geospatial Donor Radar Widget (Clean Light Design) */}
+          {/* Geospatial Donor Radar Widget */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
@@ -415,7 +554,7 @@ export function HospitalDashboard() {
                 <Users className="h-3.5 w-3.5 text-slate-400" />
                 Active Local Donors
               </span>
-              <span className="font-black text-slate-900">100 Donors</span>
+              <span className="font-black text-slate-900">{donors.length} Donors</span>
             </div>
 
             <Link
@@ -537,6 +676,14 @@ export function HospitalDashboard() {
           onVerifySubmit={handleVerifyDonationSubmit}
         />
       )}
+
+      <DirectRequestModal
+        isOpen={directModalOpen}
+        onClose={() => setDirectModalOpen(false)}
+        donor={targetDonor}
+        hospitalName={hospital?.hospital_name || "Medical Facility"}
+        onSendDirectRequest={handleSendDirectRequest}
+      />
     </div>
   );
 }
