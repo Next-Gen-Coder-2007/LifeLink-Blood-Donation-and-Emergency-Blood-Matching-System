@@ -195,7 +195,7 @@ export function HospitalSettingsPage() {
                   value={form.hospital_name}
                   onChange={(e) => setForm({ ...form, hospital_name: e.target.value })}
                   placeholder="e.g. Metro General Trauma Center"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                 />
               </div>
             </div>
@@ -211,7 +211,7 @@ export function HospitalSettingsPage() {
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     placeholder="+1 (555) 019-2834"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function HospitalSettingsPage() {
                     value={form.emergency_contact}
                     onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })}
                     placeholder="+1 (555) 911-0000"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
@@ -242,7 +242,7 @@ export function HospitalSettingsPage() {
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   placeholder="Street, City, State, ZIP"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                 />
               </div>
             </div>
@@ -256,9 +256,9 @@ export function HospitalSettingsPage() {
                 <button
                   type="button"
                   onClick={handleGetCurrentLocation}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50 transition cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
                 >
-                  <Navigation className="h-3.5 w-3.5 text-blue-600" />
+                  <Navigation className="h-3.5 w-3.5 text-red-500" />
                   Auto-Detect GPS
                 </button>
               </div>
@@ -308,7 +308,7 @@ export function HospitalSettingsPage() {
                   required
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                 />
               </div>
             </div>
@@ -323,7 +323,7 @@ export function HospitalSettingsPage() {
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder="Leave blank to keep current"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
@@ -337,7 +337,7 @@ export function HospitalSettingsPage() {
                     value={form.confirm_password}
                     onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
                     placeholder="Confirm new password"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none transition font-medium"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-2.5 text-sm text-slate-900 focus:border-red-500 focus:bg-white focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
@@ -359,7 +359,7 @@ export function HospitalSettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
           >
             <Save className="h-4 w-4" />
             {saving ? "Saving Changes..." : "Save Hospital Settings"}

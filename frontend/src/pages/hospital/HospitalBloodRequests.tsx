@@ -171,7 +171,7 @@ export function HospitalBloodRequests() {
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             New Broadcast
@@ -294,7 +294,7 @@ export function HospitalBloodRequests() {
                                     ? "bg-emerald-100 text-emerald-800"
                                     : p.status === "cancelled"
                                     ? "bg-slate-100 text-slate-500"
-                                    : "bg-blue-100 text-blue-800 animate-pulse"
+                                    : "bg-red-50 text-red-800 border border-red-200 animate-pulse"
                                 }`}>
                                   {p.status.toUpperCase()}
                                 </span>
@@ -310,7 +310,7 @@ export function HospitalBloodRequests() {
                                 href={`tel:${p.donor_phone}`}
                                 className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
                               >
-                                <Phone className="h-3 w-3 text-blue-600" />
+                                <Phone className="h-3 w-3 text-red-500" />
                                 Call Donor
                               </a>
 

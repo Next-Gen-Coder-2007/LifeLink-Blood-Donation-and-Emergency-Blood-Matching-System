@@ -210,7 +210,7 @@ Donor Proximity: ${donor.distanceKm ?? "Nearby"} km (~${donor.estimatedMins ?? "
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                <Sparkles className="h-3.5 w-3.5 text-red-500" />
                 Clinical Templates (1-Click Apply)
               </label>
             </div>
@@ -244,7 +244,7 @@ Donor Proximity: ${donor.distanceKm ?? "Nearby"} km (~${donor.estimatedMins ?? "
           {/* Direct Callback Hotline Preview */}
           <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 flex items-center justify-between text-xs">
             <span className="text-slate-500 flex items-center gap-1">
-              <Phone className="h-3.5 w-3.5 text-blue-600" /> Facility Hotline:
+              <Phone className="h-3.5 w-3.5 text-red-500" /> Facility Hotline:
             </span>
             <span className="font-bold text-slate-800">{hospitalName} Triage Desk</span>
           </div>

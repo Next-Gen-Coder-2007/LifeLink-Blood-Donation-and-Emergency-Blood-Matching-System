@@ -432,7 +432,7 @@ export function HospitalDonorMap({
         {/* Last Donation History Filter */}
         <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/60">
           <span className="text-[11px] font-bold text-slate-400 mr-1 flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5 text-blue-600" /> Last Donated Filter:
+            <Calendar className="h-3.5 w-3.5 text-red-500" /> Last Donated Filter:
           </span>
           {DONATION_INTERVAL_OPTIONS.map((opt) => (
             <button
@@ -441,7 +441,7 @@ export function HospitalDonorMap({
               onClick={() => setDonationIntervalFilter(opt.id)}
               className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                 donationIntervalFilter === opt.id
-                  ? "bg-blue-600 text-white shadow-2xs"
+                  ? "bg-slate-900 text-white shadow-2xs"
                   : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -461,7 +461,7 @@ export function HospitalDonorMap({
                 onClick={() => setSelectedBloodGroup(bg)}
                 className={`rounded-md px-2 py-0.5 text-xs font-bold transition cursor-pointer ${
                   selectedBloodGroup === bg
-                    ? "bg-red-500 text-white"
+                    ? "bg-red-600 text-white"
                     : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                 }`}
               >
@@ -480,7 +480,7 @@ export function HospitalDonorMap({
                   onClick={() => setRadiusFilter(rad.value)}
                   className={`rounded-lg px-2 py-0.5 text-xs font-extrabold transition cursor-pointer ${
                     radiusFilter === rad.value
-                      ? "bg-blue-600 text-white shadow-2xs"
+                      ? "bg-slate-900 text-white shadow-2xs"
                       : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
@@ -582,7 +582,7 @@ export function HospitalDonorMap({
                 <button
                   type="button"
                   onClick={() => onDirectRequest(selectedDonor)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Direct Emergency Ping

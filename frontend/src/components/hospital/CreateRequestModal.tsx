@@ -93,10 +93,10 @@ export function CreateRequestModal({ isOpen, onClose, onSubmit, initialBloodGrou
                 className={`rounded-xl py-2 text-xs font-bold capitalize transition cursor-pointer ${
                   urgency === level
                     ? level === "emergency"
-                      ? "bg-red-500 text-white shadow-xs"
+                      ? "bg-red-600 text-white shadow-xs"
                       : level === "urgent"
-                      ? "bg-amber-500 text-white shadow-xs"
-                      : "bg-blue-600 text-white shadow-xs"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-slate-900 text-white shadow-xs"
                     : "border border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100"
                 }`}
               >
