@@ -14,10 +14,10 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-6 text-xs font-medium text-slate-600">
-          <Link to="/" className="hover:text-red-500 transition">Home</Link>
-          <Link to="/register/donor" className="hover:text-red-500 transition">Donor Registration</Link>
-          <Link to="/register/hospital" className="hover:text-blue-600 transition">Hospital Registration</Link>
-          <Link to="/admin/login" className="hover:text-slate-900 transition">Admin Portal</Link>
+          <Link to="/" className="hover:text-red-600 transition">Home</Link>
+          <Link to="/register/donor" className="hover:text-red-600 transition">Donor Registration</Link>
+          <Link to="/register/hospital" className="hover:text-red-600 transition">Hospital Registration</Link>
+          <Link to="/admin/login" className="hover:text-red-600 transition">Admin Portal</Link>
         </div>
 
         <p className="text-xs text-slate-400">

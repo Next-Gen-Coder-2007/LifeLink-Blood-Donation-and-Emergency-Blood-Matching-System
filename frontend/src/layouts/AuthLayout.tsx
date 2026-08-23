@@ -18,14 +18,14 @@ interface AuthLayoutProps {
 export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
   return (
     <div className="grid min-h-screen bg-white lg:grid-cols-2">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-primary via-primary-dark to-secondary p-12 lg:flex lg:flex-col">
+      <section className="relative hidden overflow-hidden bg-slate-900 p-12 lg:flex lg:flex-col">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-red-600/20 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-accent/20 blur-3xl"
+          className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-red-600/10 blur-3xl"
         />
 
         <Logo to="/" variant="light" className="relative" />
@@ -34,15 +34,15 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
           <h2 className="max-w-md text-3xl font-bold leading-tight text-white">
             Every drop can save a life.
           </h2>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-blue-100">
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
             LifeLink connects blood donors, hospitals, and patients through a
             smarter and faster blood donation management system.
           </p>
 
           <ul className="mt-8 space-y-4">
             {HIGHLIGHTS.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-sm text-blue-50">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
+              <li key={text} className="flex items-center gap-3 text-sm text-slate-200">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-red-400">
                   <Icon className="h-4.5 w-4.5" aria-hidden />
                 </span>
                 {text}
