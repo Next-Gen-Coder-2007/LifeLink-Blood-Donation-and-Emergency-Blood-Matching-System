@@ -12,7 +12,7 @@ export function Logo({ to = "/", variant = "dark", className }: LogoProps) {
   const iconClass =
     variant === "light"
       ? "bg-white/15 text-white"
-      : "bg-gradient-to-br from-primary to-secondary text-white";
+      : "bg-red-600 text-white shadow-xs";
 
   const content = (
     <span className={cn("inline-flex items-center gap-2.5", className)}>

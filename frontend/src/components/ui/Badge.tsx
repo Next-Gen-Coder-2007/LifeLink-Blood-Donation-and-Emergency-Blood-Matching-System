@@ -15,9 +15,9 @@ export function BloodGroupBadge({ group, className }: { group: string; className
 
 export function UrgencyBadge({ urgency, className }: { urgency: "normal" | "urgent" | "emergency" | string; className?: string }) {
   const styles = {
-    emergency: "bg-red-100 text-red-700 border-red-200",
-    urgent: "bg-amber-100 text-amber-700 border-amber-200",
-    normal: "bg-blue-100 text-blue-700 border-blue-200",
+    emergency: "bg-red-50 text-red-700 border-red-200",
+    urgent: "bg-amber-50 text-amber-700 border-amber-200",
+    normal: "bg-slate-100 text-slate-700 border-slate-200",
   }[urgency] || "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
