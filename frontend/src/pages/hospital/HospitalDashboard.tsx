@@ -15,6 +15,7 @@ import {
   Settings,
   HeartHandshake,
   UserCheck,
+  Layers,
 } from "lucide-react";
 import { api, getSession } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
@@ -62,7 +63,6 @@ export function HospitalDashboard() {
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [pledges, setPledges] = useState<DonationPledgeItem[]>([]);
-  const [updatingGroup, setUpdatingGroup] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -138,23 +138,6 @@ export function HospitalDashboard() {
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to broadcast", "error");
       throw err;
-    }
-  };
-
-  const handleStockUpdate = async (group: string, newUnits: number) => {
-    if (!hospital) return;
-    setUpdatingGroup(group);
-    try {
-      await api.put(`/hospitals/${hospital.id}/blood-bank`, {
-        blood_group: group,
-        units: newUnits,
-      });
-      setStockMap((prev) => ({ ...prev, [group]: newUnits }));
-      showToast(`${group} stock updated to ${newUnits} units`);
-    } catch {
-      showToast(`Failed to update ${group} inventory`, "error");
-    } finally {
-      setUpdatingGroup(null);
     }
   };
 
@@ -419,25 +402,25 @@ export function HospitalDashboard() {
         </div>
       </div>
 
-      {/* Live Refrigerated Inventory Matrix */}
+      {/* Live Refrigerated Inventory Matrix (Read-Only Telemetry) */}
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Refrigerated Blood Bank Inventory ({totalUnits} Total Units)</CardTitle>
-            <CardDescription>Direct unit counts stored in facility temperature-controlled storage</CardDescription>
+            <CardTitle>Refrigerated Blood Bank Telemetry ({totalUnits} Total Units)</CardTitle>
+            <CardDescription>Live cold-storage unit counts across 8 standard blood groups</CardDescription>
           </div>
           <Link
             to="/hospital/blood-bank"
-            className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
           >
-            Manage Inventory →
+            <Layers className="h-3.5 w-3.5 text-red-500" />
+            Manage & Update Stock →
           </Link>
         </CardHeader>
         <div className="pt-4">
           <BloodMatrixGrid
             stock={stockMap}
-            onUpdate={handleStockUpdate}
-            updatingGroup={updatingGroup}
+            readonly={true}
             onBroadcastNeed={handleQuickBroadcast}
           />
         </div>

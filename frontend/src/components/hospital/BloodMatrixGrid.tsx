@@ -1,9 +1,9 @@
-import { Plus, Minus, AlertCircle, Sparkles, Droplet } from "lucide-react";
+import { Plus, Minus, AlertCircle, Sparkles, ThermometerSnowflake } from "lucide-react";
 
 interface BloodMatrixGridProps {
   stock: Record<string, number>;
-  onUpdate: (group: string, newCount: number) => void;
-  updatingGroup: string | null;
+  onUpdate?: (group: string, newCount: number) => void;
+  updatingGroup?: string | null;
   readonly?: boolean;
   onBroadcastNeed?: (group: string) => void;
 }
@@ -22,7 +22,7 @@ const BLOOD_GROUPS = [
 export function BloodMatrixGrid({
   stock,
   onUpdate,
-  updatingGroup,
+  updatingGroup = null,
   readonly = false,
   onBroadcastNeed,
 }: BloodMatrixGridProps) {
@@ -125,9 +125,9 @@ export function BloodMatrixGrid({
               </div>
             </div>
 
-            {/* Stepper controls and Quick Broadcast CTA */}
+            {/* Stepper controls (if not readonly) OR Clinical Telemetry Badge (if readonly) */}
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              {!readonly ? (
+              {!readonly && onUpdate ? (
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
@@ -154,8 +154,9 @@ export function BloodMatrixGrid({
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-                  <Droplet className="h-3 w-3 text-red-500" /> Monitored Stock
+                <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                  <ThermometerSnowflake className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>3.8°C Cold Stored</span>
                 </div>
               )}
 
@@ -168,6 +169,10 @@ export function BloodMatrixGrid({
                   <Sparkles className="h-3 w-3 text-red-600" />
                   Broadcast
                 </button>
+              ) : readonly ? (
+                <span className="text-[10px] font-bold text-slate-400">
+                  {count} Units Available
+                </span>
               ) : null}
             </div>
           </div>
