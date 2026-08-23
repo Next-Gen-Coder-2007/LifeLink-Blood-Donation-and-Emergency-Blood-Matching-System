@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  createHospital,
   getHospitals,
   getPublicHospitalsMap,
   getHospitalById,
@@ -17,7 +18,9 @@ router.route('/')
 router.get('/public-map', getPublicHospitalsMap);
 router.get('/public/map', getPublicHospitalsMap);
 
-router.get('/user/:user_id', getHospitalByUserId);
+router.route('/user/:user_id')
+  .get(getHospitalByUserId)
+  .post(createHospital);
 
 router.route('/:hospital_id')
   .get(getHospitalById)

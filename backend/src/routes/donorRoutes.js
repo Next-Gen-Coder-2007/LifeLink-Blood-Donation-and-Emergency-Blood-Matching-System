@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  createDonor,
   getDonors,
   getDonorById,
   getDonorByUserId,
@@ -13,7 +14,9 @@ const router = Router();
 router.route('/')
   .get(getDonors);
 
-router.get('/user/:user_id', getDonorByUserId);
+router.route('/user/:user_id')
+  .get(getDonorByUserId)
+  .post(createDonor);
 
 router.route('/:donor_id')
   .get(getDonorById)
