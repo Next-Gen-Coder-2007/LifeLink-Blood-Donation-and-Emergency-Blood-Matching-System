@@ -51,7 +51,7 @@ export function PledgeDonationModal({
       <div className="mb-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-blue-600" />
+            <Building2 className="h-4 w-4 text-slate-500" />
             <span className="text-xs font-bold text-slate-900">{request.hospital_name}</span>
           </div>
           <span className="rounded-md bg-red-100 px-2 py-0.5 text-xs font-extrabold text-red-700">
@@ -115,7 +115,7 @@ export function PledgeDonationModal({
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
           >
             <HeartHandshake className="h-4 w-4" />
             {submitting ? "Pledging..." : "Confirm & Pledge to Donate"}

@@ -106,7 +106,7 @@ export function DonorRequestCard({
             href={`tel:${hotline}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition cursor-pointer"
           >
-            <Phone className="h-3.5 w-3.5 text-blue-600" />
+            <Phone className="h-3.5 w-3.5 text-red-500" />
             Call Hotline
           </a>
 
@@ -135,7 +135,7 @@ export function DonorRequestCard({
             <button
               type="button"
               onClick={() => onPledgeClick?.(request)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-600 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
             >
               <HeartHandshake className="h-3.5 w-3.5" />
               Pledge Donation

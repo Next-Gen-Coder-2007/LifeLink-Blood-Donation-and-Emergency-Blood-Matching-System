@@ -62,7 +62,7 @@ export function DonationCertificateModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left bg-white/80 rounded-xl p-4 border border-slate-200/60 shadow-2xs">
           <div className="space-y-1">
             <p className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1">
-              <Building2 className="h-3.5 w-3.5 text-blue-500" />
+              <Building2 className="h-3.5 w-3.5 text-slate-500" />
               Medical Facility
             </p>
             <p className="text-xs font-bold text-slate-800">{donation.hospital_name}</p>

@@ -275,7 +275,7 @@ export function DonorDashboard() {
                 {p.hospital_phone && (
                   <div className="pt-1 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-[11px] text-slate-400">Direct Hotline:</span>
-                    <a href={`tel:${p.hospital_phone}`} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline">
+                    <a href={`tel:${p.hospital_phone}`} className="text-xs font-bold text-red-600 flex items-center gap-1 hover:underline">
                       <Phone className="h-3 w-3" /> {p.hospital_phone}
                     </a>
                   </div>
@@ -297,21 +297,21 @@ export function DonorDashboard() {
         />
         <StatCard
           icon={Droplet}
-          iconColor="text-blue-600"
+          iconColor="text-red-500"
           value={donor?.blood_group || "O+"}
           label="Blood Type"
           to="/donor/requests"
         />
         <StatCard
           icon={Calendar}
-          iconColor="text-emerald-600"
+          iconColor="text-slate-700"
           value={impactStats?.total_donations ? `${impactStats.total_donations} Completed` : "0 Logged"}
           label="Verified Transfusions"
           to="/donor/history"
         />
         <StatCard
           icon={Award}
-          iconColor="text-amber-500"
+          iconColor="text-slate-700"
           value={impactStats?.hero_tier || "New Hero"}
           label="Hero Badge Tier"
           to="/donor/history"
@@ -322,7 +322,7 @@ export function DonorDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Link
           to="/donor/requests"
-          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/30 transition group"
+          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
         >
           <div>
             <div className="flex items-center gap-2">
@@ -338,34 +338,34 @@ export function DonorDashboard() {
 
         <Link
           to="/donor/history"
-          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-emerald-200 hover:bg-emerald-50/30 transition group"
+          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
         >
           <div>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              <ShieldCheck className="h-4 w-4 text-red-500" />
               <h3 className="font-extrabold text-slate-900 text-sm">Digital Certificates</h3>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               View and download your official transfusion records
             </p>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-1" />
+          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
         </Link>
 
         <Link
           to="/hospital/map"
-          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-blue-200 hover:bg-blue-50/30 transition group"
+          className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
         >
           <div>
             <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-blue-600" />
+              <Compass className="h-4 w-4 text-red-500" />
               <h3 className="font-extrabold text-slate-900 text-sm">Public Hospital Radar</h3>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Explore worldwide blood bank inventory on map
             </p>
           </div>
-          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
 

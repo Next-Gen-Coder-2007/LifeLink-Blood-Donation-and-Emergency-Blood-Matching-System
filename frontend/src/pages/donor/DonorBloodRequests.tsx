@@ -279,12 +279,12 @@ export function DonorBloodRequests() {
               disabled={refreshing}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-blue-600" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-red-600" : ""}`} />
               Refresh
             </button>
             <Link
               to="/hospital/map"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition"
             >
               <Compass className="h-3.5 w-3.5" />
               Hospital Radar
@@ -348,7 +348,7 @@ export function DonorBloodRequests() {
                 onClick={() => setSelectedGroupFilter(bg)}
                 className={`rounded-md px-2 py-0.5 text-xs font-bold transition cursor-pointer ${
                   selectedGroupFilter === bg
-                    ? "bg-red-500 text-white"
+                    ? "bg-red-600 text-white"
                     : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                 }`}
               >
@@ -359,7 +359,7 @@ export function DonorBloodRequests() {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-              <Compass className="h-3.5 w-3.5 text-blue-600" /> Radius:
+              <Compass className="h-3.5 w-3.5 text-red-500" /> Radius:
             </span>
             {RADIUS_OPTIONS.map((rad) => (
               <button
@@ -368,7 +368,7 @@ export function DonorBloodRequests() {
                 onClick={() => setRadiusFilter(rad.value)}
                 className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition cursor-pointer ${
                   radiusFilter === rad.value
-                    ? "bg-blue-600 text-white shadow-2xs"
+                    ? "bg-slate-900 text-white shadow-2xs"
                     : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
                 }`}
               >

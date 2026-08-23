@@ -37,7 +37,7 @@ export function DonorRouteMap({
     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-3 mt-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
             <Building2 className="h-4 w-4" />
           </div>
           <div>
