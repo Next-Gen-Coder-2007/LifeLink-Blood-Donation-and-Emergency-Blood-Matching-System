@@ -39,11 +39,19 @@ export function LoginModal() {
       closeModals();
 
       if (data.role === "hospital") {
+        setSession(data);
+        showToast(`Welcome back, ${data.name.split(" ")[0]}!`);
+        closeModals();
         navigate("/hospital/dashboard");
-      } else if (data.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
+      } else if (data.role === "donor") {
+        setSession(data);
+        showToast(`Welcome back, ${data.name.split(" ")[0]}!`);
+        closeModals();
         navigate("/donor/dashboard");
+      } else {
+        closeModals();
+        showToast("Administrator accounts must sign in via the dedicated Admin Portal.", "error");
+        navigate("/admin/login");
       }
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Authentication failed", "error");
@@ -59,7 +67,7 @@ export function LoginModal() {
           <Droplet className="h-6 w-6" />
         </div>
         <h2 className="mt-4 text-xl font-bold text-slate-900 tracking-tight">Sign in to LifeLink</h2>
-        <p className="mt-1 text-xs text-slate-500">Access your donor, hospital, or admin command center</p>
+        <p className="mt-1 text-xs text-slate-500">Access your volunteer donor or hospital portal</p>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

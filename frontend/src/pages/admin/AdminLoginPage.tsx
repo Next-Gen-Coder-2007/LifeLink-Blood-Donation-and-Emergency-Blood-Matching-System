@@ -49,15 +49,27 @@ export function AdminLoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Admin Email</label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-700">Admin Username or Email</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("admin");
+                  setPassword("admin123");
+                }}
+                className="text-[10px] font-bold text-red-600 hover:underline cursor-pointer"
+              >
+                Auto-Fill Bypass (admin / admin123)
+              </button>
+            </div>
             <div className="relative mt-1">
               <Mail className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@lifelink.org"
+                placeholder="admin or admin@lifelink.org"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:bg-white focus:outline-none transition"
               />
             </div>
@@ -81,9 +93,9 @@ export function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
           >
-            {loading ? "Authenticating..." : "Authenticate"}
+            {loading ? "Authenticating..." : "Authenticate Admin"}
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
         </form>

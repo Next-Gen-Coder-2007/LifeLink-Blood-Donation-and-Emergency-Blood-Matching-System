@@ -189,7 +189,7 @@ export function RegisterModal() {
           onClick={() => openRegister("hospital")}
           className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold transition cursor-pointer ${
             registerTab === "hospital"
-              ? "bg-white text-blue-600 shadow-xs"
+              ? "bg-white text-red-600 shadow-xs"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -412,7 +412,7 @@ export function RegisterModal() {
             <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-blue-600" />
+                  <MapPin className="h-3.5 w-3.5 text-red-500" />
                   Facility Coordinates
                 </span>
                 <span className="text-[11px] font-mono text-slate-500">
@@ -432,7 +432,7 @@ export function RegisterModal() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 py-3 text-xs font-bold text-white shadow-xs hover:bg-red-600 disabled:opacity-50 transition cursor-pointer"
             >
               {loading ? "Registering Hospital..." : "Complete Hospital Registration"}
               {!loading && <ArrowRight className="h-3.5 w-3.5" />}

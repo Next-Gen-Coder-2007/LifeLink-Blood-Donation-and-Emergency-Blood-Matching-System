@@ -86,7 +86,7 @@ export function AdminDashboard() {
               className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
               title="Refresh Telemetry"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin text-blue-600" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin text-red-600" : ""}`} />
             </button>
           </div>
         }
@@ -103,7 +103,7 @@ export function AdminDashboard() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               icon={Users}
-              iconColor="text-blue-600"
+              iconColor="text-slate-700"
               value={stats?.totalUsers || 0}
               label="Registered Users"
               to="/admin/users"
@@ -117,14 +117,14 @@ export function AdminDashboard() {
             />
             <StatCard
               icon={Building2}
-              iconColor="text-emerald-600"
+              iconColor="text-slate-700"
               value={stats?.totalHospitals || 0}
               label="Connected Hospitals"
               to="/admin/hospitals"
             />
             <StatCard
               icon={Activity}
-              iconColor="text-amber-500"
+              iconColor="text-red-500"
               value={stats?.totalRequests || 0}
               label="Blood Requests"
               to="/admin/requests"
@@ -153,9 +153,9 @@ export function AdminDashboard() {
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500">Global Blood Stock</span>
-                <Droplet className="h-4 w-4 text-purple-500" />
+                <Droplet className="h-4 w-4 text-red-500" />
               </div>
-              <p className="mt-1.5 text-2xl font-black text-purple-600">{totalUnits}</p>
+              <p className="mt-1.5 text-2xl font-black text-red-600">{totalUnits}</p>
               <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Refrigerated Units</p>
             </div>
           </div>
@@ -164,21 +164,21 @@ export function AdminDashboard() {
           <div className="grid gap-3 sm:grid-cols-3">
             <Link
               to="/admin/users"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-blue-600" />
+                  <Users className="h-4 w-4 text-red-500" />
                   User Accounts
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Audit roles & manage login credentials</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               to="/admin/donors"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
@@ -187,63 +187,63 @@ export function AdminDashboard() {
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Blood types, coordinates & last donations</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               to="/admin/hospitals"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-emerald-600" />
+                  <Building2 className="h-4 w-4 text-red-500" />
                   Hospital Facilities
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Emergency hotlines & facility blood banks</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               to="/admin/requests"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <Activity className="h-4 w-4 text-amber-500" />
+                  <Activity className="h-4 w-4 text-red-500" />
                   Blood Broadcasts
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Audit triage urgency & fulfillments</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               to="/admin/certificates"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <Award className="h-4 w-4 text-purple-600" />
+                  <Award className="h-4 w-4 text-red-500" />
                   Certificate Ledger
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Clinical serial verification hashes</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               to="/hospital/map"
-              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
+              className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:border-red-200 hover:bg-red-50/20 transition group"
             >
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                  <Compass className="h-4 w-4 text-blue-500" />
+                  <Compass className="h-4 w-4 text-red-500" />
                   Live Geospatial Radar
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">Interactive donor proximity mesh</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-600 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
 
