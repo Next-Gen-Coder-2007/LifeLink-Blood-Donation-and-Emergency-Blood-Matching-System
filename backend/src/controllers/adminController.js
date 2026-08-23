@@ -535,22 +535,3 @@ export const getAdminCertificates = async (req, res, next) => {
     next(error);
   }
 };
-
-/**
- * POST /admin/seed
- * Programmatically re-seed database with clean sample records
- */
-export const reseedDatabaseAdmin = async (req, res, next) => {
-  try {
-    // Dynamic import seed script function
-    const { seedDatabase } = await import('../utils/seedData.js');
-
-    // Run in background / immediate
-    return res.status(200).json({
-      message: 'Seed routine initialized. Sample data is now active on MongoDB database.',
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    next(error);
-  }
-};

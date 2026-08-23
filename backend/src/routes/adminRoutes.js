@@ -10,7 +10,6 @@ import {
   getAdminHospitals,
   getAdminRequests,
   getAdminCertificates,
-  reseedDatabaseAdmin,
 } from '../controllers/adminController.js';
 import { deleteDonor } from '../controllers/donorController.js';
 import { deleteHospital } from '../controllers/hospitalController.js';
@@ -24,9 +23,6 @@ router.get('/overview', getAdminOverview);
 router.get('/stats', getAdminOverview);
 router.get('/health', getSystemHealth);
 router.get('/system-health', getSystemHealth);
-
-// Seed / Data Reset
-router.post('/seed', reseedDatabaseAdmin);
 
 // User Accounts Management
 router.route('/users')
