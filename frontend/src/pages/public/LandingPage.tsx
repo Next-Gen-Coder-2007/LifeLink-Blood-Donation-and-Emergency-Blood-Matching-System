@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Droplet, ArrowRight, ShieldCheck, Activity, Building2, HeartHandshake, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { MobileAppBanner } from "@/components/common/MobileAppBanner";
 import { ProximityMapNetwork } from "@/components/common/ProximityMapNetwork";
 import { useAuthModal } from "@/context/AuthModalContext";
 
@@ -93,7 +92,7 @@ export function LandingPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
               <Activity className="h-5 w-5" />
             </div>
             <h3 className="mt-4 font-bold text-slate-900">1. Emergency Broadcast</h3>
@@ -103,7 +102,7 @@ export function LandingPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
               <HeartHandshake className="h-5 w-5" />
             </div>
             <h3 className="mt-4 font-bold text-slate-900">2. Proximity Matching</h3>
@@ -113,7 +112,7 @@ export function LandingPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h3 className="mt-4 font-bold text-slate-900">3. Stock Fulfillment</h3>
@@ -126,10 +125,6 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-5xl px-4 sm:px-6">
         <ProximityMapNetwork />
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 sm:px-6">
-        <MobileAppBanner />
       </section>
 
       <section className="mx-auto max-w-5xl px-4 sm:px-6">
