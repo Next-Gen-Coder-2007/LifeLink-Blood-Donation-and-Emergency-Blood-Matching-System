@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import { Notification } from '../models/Notification.js';
+import { Donor } from '../models/Donor.js';
+import { Hospital } from '../models/Hospital.js';
 import { AppError } from '../middlewares/errorMiddleware.js';
 
 export const getUserNotifications = async (req, res, next) => {
@@ -7,9 +9,23 @@ export const getUserNotifications = async (req, res, next) => {
     const { user_id } = req.params;
     const { role } = req.query;
 
+    const recipientIds = [String(user_id)];
+    if (mongoose.Types.ObjectId.isValid(user_id)) {
+      try {
+        const [donor, hospital] = await Promise.all([
+          Donor.findOne({ user_id }).select('_id').lean(),
+          Hospital.findOne({ user_id }).select('_id').lean(),
+        ]);
+        if (donor?._id) recipientIds.push(donor._id.toString());
+        if (hospital?._id) recipientIds.push(hospital._id.toString());
+      } catch {
+        // Non-blocking profile lookup
+      }
+    }
+
     const query = {
       $or: [
-        { recipient_id: user_id },
+        { recipient_id: { $in: recipientIds } },
         { recipient_role: 'all' },
       ],
     };
@@ -79,8 +95,22 @@ export const markAllRead = async (req, res, next) => {
   try {
     const { user_id } = req.params;
 
+    const recipientIds = [String(user_id)];
+    if (mongoose.Types.ObjectId.isValid(user_id)) {
+      try {
+        const [donor, hospital] = await Promise.all([
+          Donor.findOne({ user_id }).select('_id').lean(),
+          Hospital.findOne({ user_id }).select('_id').lean(),
+        ]);
+        if (donor?._id) recipientIds.push(donor._id.toString());
+        if (hospital?._id) recipientIds.push(hospital._id.toString());
+      } catch {
+        // Non-blocking lookup
+      }
+    }
+
     await Notification.updateMany(
-      { recipient_id: user_id, is_read: false },
+      { recipient_id: { $in: recipientIds }, is_read: false },
       { is_read: true }
     );
 

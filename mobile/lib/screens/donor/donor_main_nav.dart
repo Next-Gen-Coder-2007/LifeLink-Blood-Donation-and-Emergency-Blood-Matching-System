@@ -19,6 +19,7 @@ class DonorMainNav extends StatefulWidget {
 
 class _DonorMainNavState extends State<DonorMainNav> {
   int _currentIndex = 0;
+  String? _loadedDonorId;
 
   final List<Widget> _screens = const [
     DonorDashboardScreen(),
@@ -35,22 +36,52 @@ class _DonorMainNavState extends State<DonorMainNav> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = Provider.of<AuthProvider>(context);
+    final donorId = auth.donorProfile?.id ?? auth.user?.profileId;
+    if (donorId != null && donorId.isNotEmpty && donorId != _loadedDonorId) {
+      _loadData();
+    }
+  }
+
+  @override
+  void dispose() {
+    final notifProvider = context.read<NotificationProvider>();
+    notifProvider.stopPolling();
+    super.dispose();
+  }
+
   void _loadData() {
     final auth = context.read<AuthProvider>();
     final donor = auth.donorProfile;
+    final donorId = donor?.id ?? auth.user?.profileId;
+    final donorGroup = donor?.bloodGroup ?? auth.user?.bloodGroup ?? 'O+';
+    final userId = auth.user?.id;
+
+    _loadedDonorId = donorId;
+
     context.read<DonorProvider>().loadDonorData(
-          donorId: donor?.id,
-          donorGroup: donor?.bloodGroup ?? 'O+',
+          donorId: donorId,
+          donorGroup: donorGroup,
           donorLat: auth.userLat,
           donorLng: auth.userLng,
         );
-    if (auth.user != null) {
-      context.read<NotificationProvider>().fetchNotifications(auth.user!.id, role: 'donor');
+
+    if (userId != null && userId.isNotEmpty) {
+      context.read<NotificationProvider>().startPolling(userId, role: 'donor');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final donorProvider = context.watch<DonorProvider>();
+    final notifProvider = context.watch<NotificationProvider>();
+    final activePledgesCount = donorProvider.pledges
+        .where((p) => p.status == 'pledged' || p.status == 'acknowledged')
+        .length;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -67,25 +98,40 @@ class _DonorMainNavState extends State<DonorMainNav> {
           backgroundColor: Colors.white,
           indicatorColor: AppTheme.primaryRedLight,
           surfaceTintColor: Colors.transparent,
-          destinations: const [
-            NavigationDestination(
+          destinations: [
+            const NavigationDestination(
               icon: Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.slate500),
               selectedIcon: Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.primaryRed),
               label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.droplet, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.droplet, size: 20, color: AppTheme.primaryRed),
+              icon: Badge(
+                isLabelVisible: activePledgesCount > 0,
+                label: Text('$activePledgesCount', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.medicalBlue,
+                child: const Icon(LucideIcons.droplet, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.droplet, size: 20, color: AppTheme.primaryRed),
               label: 'Matching',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.award, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.award, size: 20, color: AppTheme.primaryRed),
+              icon: Badge(
+                isLabelVisible: donorProvider.history.isNotEmpty,
+                label: Text('${donorProvider.history.length}', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.medicalEmerald,
+                child: const Icon(LucideIcons.award, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.award, size: 20, color: AppTheme.primaryRed),
               label: 'Certificates',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.user, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.user, size: 20, color: AppTheme.primaryRed),
+              icon: Badge(
+                isLabelVisible: notifProvider.unreadCount > 0,
+                label: Text('${notifProvider.unreadCount}', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.primaryRed,
+                child: const Icon(LucideIcons.user, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.user, size: 20, color: AppTheme.primaryRed),
               label: 'Profile',
             ),
           ],

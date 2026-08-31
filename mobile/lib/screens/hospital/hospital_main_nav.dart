@@ -48,6 +48,13 @@ class _HospitalMainNavState extends State<HospitalMainNav> {
     }
   }
 
+  @override
+  void dispose() {
+    final notifProvider = context.read<NotificationProvider>();
+    notifProvider.stopPolling();
+    super.dispose();
+  }
+
   void _loadData() {
     final auth = context.read<AuthProvider>();
     final hosp = auth.hospitalProfile;
@@ -65,12 +72,21 @@ class _HospitalMainNavState extends State<HospitalMainNav> {
           );
     }
     if (userId != null && userId.isNotEmpty) {
-      context.read<NotificationProvider>().fetchNotifications(userId, role: 'hospital');
+      context.read<NotificationProvider>().startPolling(userId, role: 'hospital');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hospProvider = context.watch<HospitalProvider>();
+    final notifProvider = context.watch<NotificationProvider>();
+    final activeReqsCount = hospProvider.hospitalRequests
+        .where((r) => r.status == 'searching')
+        .length;
+    final incomingPledgesCount = hospProvider.hospitalPledges
+        .where((p) => p.status == 'pledged' || p.status == 'acknowledged')
+        .length;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -87,30 +103,45 @@ class _HospitalMainNavState extends State<HospitalMainNav> {
           backgroundColor: Colors.white,
           indicatorColor: AppTheme.medicalBlueLight,
           surfaceTintColor: Colors.transparent,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.medicalBlue),
+              icon: Badge(
+                isLabelVisible: incomingPledgesCount > 0,
+                label: Text('$incomingPledgesCount', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.medicalEmerald,
+                child: const Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.layoutDashboard, size: 20, color: AppTheme.medicalBlue),
               label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.gitPullRequest, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.gitPullRequest, size: 20, color: AppTheme.medicalBlue),
+              icon: Badge(
+                isLabelVisible: activeReqsCount > 0,
+                label: Text('$activeReqsCount', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.primaryRed,
+                child: const Icon(LucideIcons.gitPullRequest, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.gitPullRequest, size: 20, color: AppTheme.medicalBlue),
               label: 'Requests',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(LucideIcons.layers, size: 20, color: AppTheme.slate500),
               selectedIcon: Icon(LucideIcons.layers, size: 20, color: AppTheme.medicalBlue),
               label: 'Blood Bank',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(LucideIcons.radar, size: 20, color: AppTheme.slate500),
               selectedIcon: Icon(LucideIcons.radar, size: 20, color: AppTheme.medicalBlue),
               label: 'Radar',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.settings, size: 20, color: AppTheme.slate500),
-              selectedIcon: Icon(LucideIcons.settings, size: 20, color: AppTheme.medicalBlue),
+              icon: Badge(
+                isLabelVisible: notifProvider.unreadCount > 0,
+                label: Text('${notifProvider.unreadCount}', style: const TextStyle(fontSize: 10)),
+                backgroundColor: AppTheme.primaryRed,
+                child: const Icon(LucideIcons.settings, size: 20, color: AppTheme.slate500),
+              ),
+              selectedIcon: const Icon(LucideIcons.settings, size: 20, color: AppTheme.medicalBlue),
               label: 'Settings',
             ),
           ],

@@ -47,18 +47,5 @@ router.use('/donation-history', donationHistoryRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/matching', matchingRoutes);
 
-router.use('/api/v1', authRoutes);
-router.use('/api/v1/admin', adminRoutes);
-router.use('/api/v1/users', userRoutes);
-router.use('/api/v1/donors', donorRoutes);
-router.use('/api/v1/hospitals', hospitalRoutes);
-router.use('/api/v1/blood-requests', bloodRequestRoutes);
-router.use('/api/v1/blood-inventory', bloodInventoryRouter);
-router.use('/api/v1/analytics', analyticsRoutes);
-router.use('/api/v1/donation-pledges', donationPledgeRoutes);
-router.use('/api/v1/donation-history', donationHistoryRoutes);
-router.use('/api/v1/notifications', notificationRoutes);
-router.use('/api/v1/matching', matchingRoutes);
-
 export default router;
 
