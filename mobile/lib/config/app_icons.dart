@@ -19,6 +19,7 @@ class LucideIcons {
   static const IconData radar = Icons.radar_rounded;
   static const IconData checkCircle = Icons.check_circle_rounded;
   static const IconData checkCircle2 = Icons.check_circle_rounded;
+  static const IconData checkCheck = Icons.done_all_rounded;
   static const IconData alertTriangle = Icons.warning_amber_rounded;
   static const IconData alertCircle = Icons.error_outline_rounded;
   static const IconData clock = Icons.access_time_rounded;
@@ -42,4 +43,9 @@ class LucideIcons {
   static const IconData layoutDashboard = Icons.dashboard_rounded;
   static const IconData gitPullRequest = Icons.alt_route_rounded;
   static const IconData send = Icons.send_rounded;
+  static const IconData trash2 = Icons.delete_outline_rounded;
+  static const IconData refreshCw = Icons.refresh_rounded;
+  static const IconData shieldCheck = Icons.verified_user_rounded;
+  static const IconData download = Icons.download_rounded;
+  static const IconData chevronRight = Icons.chevron_right_rounded;
 }

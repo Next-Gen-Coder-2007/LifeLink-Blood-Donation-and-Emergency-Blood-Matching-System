@@ -16,6 +16,14 @@ class DonorProvider with ChangeNotifier {
   String _bloodGroupFilter = 'ALL';
   double _radiusFilter = 0; // 0 = Any Distance
 
+  // Donor Impact Stats from backend
+  int _totalDonations = 0;
+  int _totalUnits = 0;
+  int _livesSaved = 0;
+  String _heroTier = 'New Lifesaver';
+  int? _daysSinceLastDonation;
+  String? _lastDonationDate;
+
   List<BloodRequestModel> get requests => _requests;
   List<DonationPledgeModel> get pledges => _pledges;
   List<DonationHistoryModel> get history => _history;
@@ -24,10 +32,14 @@ class DonorProvider with ChangeNotifier {
   String get bloodGroupFilter => _bloodGroupFilter;
   double get radiusFilter => _radiusFilter;
 
-  int get totalDonatedUnits =>
-      _history.fold(0, (sum, item) => sum + item.unitsDonated);
-
-  int get totalLivesSaved => totalDonatedUnits * 3;
+  int get totalDonations => _totalDonations > 0 ? _totalDonations : _history.length;
+  int get totalDonatedUnits => _totalUnits > 0
+      ? _totalUnits
+      : _history.fold(0, (sum, item) => sum + item.units);
+  int get totalLivesSaved => _livesSaved > 0 ? _livesSaved : totalDonatedUnits * 3;
+  String get heroTier => _heroTier;
+  int? get daysSinceLastDonation => _daysSinceLastDonation;
+  String? get lastDonationDate => _lastDonationDate;
 
   void setFilterMode(String mode) {
     _filterMode = mode;
@@ -55,17 +67,27 @@ class DonorProvider with ChangeNotifier {
 
     try {
       final futures = <Future<dynamic>>[
-        NetworkClient.get(ApiConfig.bloodRequests),
+        NetworkClient.get(ApiConfig.bloodRequests).catchError((e) {
+          debugPrint('Error loading blood requests: $e');
+          return [];
+        }),
       ];
 
       if (donorId != null && donorId.isNotEmpty) {
-        futures.add(NetworkClient.get(ApiConfig.donationPledgesByDonor(donorId)).catchError((_) => []));
-        futures.add(NetworkClient.get(ApiConfig.donationHistoryByDonor(donorId)).catchError((_) => []));
+        futures.add(NetworkClient.get(ApiConfig.donationPledgesByDonor(donorId)).catchError((e) {
+          debugPrint('Error loading pledges: $e');
+          return [];
+        }));
+        futures.add(NetworkClient.get(ApiConfig.donationHistoryByDonor(donorId)).catchError((e) {
+          debugPrint('Error loading history: $e');
+          return null;
+        }));
       }
 
       final results = await Future.wait(futures);
 
-      if (results[0] is List) {
+      // 1. Blood Requests
+      if (results.isNotEmpty && results[0] is List) {
         final rawList = results[0] as List;
         _requests = rawList
             .map((json) => BloodRequestModel.fromJson(Map<String, dynamic>.from(json)))
@@ -90,6 +112,7 @@ class DonorProvider with ChangeNotifier {
             .toList();
       }
 
+      // 2. Donation Pledges
       if (results.length > 1 && results[1] is List) {
         final rawPledges = results[1] as List;
         _pledges = rawPledges
@@ -97,21 +120,55 @@ class DonorProvider with ChangeNotifier {
             .toList();
       }
 
-      if (results.length > 2) {
-        if (results[2] is Map && results[2]['donations'] is List) {
-          final rawHist = results[2]['donations'] as List;
-          _history = rawHist
+      // 3. Donation History & Impact Stats
+      if (results.length > 2 && results[2] != null) {
+        final histResult = results[2];
+        if (histResult is Map) {
+          if (histResult['total_donations'] != null) {
+            _totalDonations = (histResult['total_donations'] as num?)?.toInt() ?? 0;
+          }
+          if (histResult['total_units'] != null) {
+            _totalUnits = (histResult['total_units'] as num?)?.toInt() ?? 0;
+          }
+          if (histResult['lives_saved'] != null) {
+            _livesSaved = (histResult['lives_saved'] as num?)?.toInt() ?? 0;
+          }
+          if (histResult['hero_tier'] != null) {
+            _heroTier = histResult['hero_tier'].toString();
+          }
+          if (histResult['days_since_last_donation'] != null) {
+            _daysSinceLastDonation = (histResult['days_since_last_donation'] as num?)?.toInt();
+          }
+          if (histResult['last_donation_date'] != null) {
+            _lastDonationDate = histResult['last_donation_date']?.toString();
+          }
+
+          final rawHist = histResult['history'] ?? histResult['donations'];
+          if (rawHist is List) {
+            _history = rawHist
+                .map((json) => DonationHistoryModel.fromJson(Map<String, dynamic>.from(json)))
+                .toList();
+          }
+        } else if (histResult is List) {
+          _history = histResult
               .map((json) => DonationHistoryModel.fromJson(Map<String, dynamic>.from(json)))
               .toList();
-        } else if (results[2] is List) {
-          final rawHist = results[2] as List;
-          _history = rawHist
-              .map((json) => DonationHistoryModel.fromJson(Map<String, dynamic>.from(json)))
-              .toList();
+          _totalDonations = _history.length;
+          _totalUnits = _history.fold(0, (sum, h) => sum + h.units);
+          _livesSaved = _totalUnits * 3;
+          if (_totalDonations >= 10) {
+            _heroTier = 'Platinum Hero';
+          } else if (_totalDonations >= 5) {
+            _heroTier = 'Gold Guardian';
+          } else if (_totalDonations >= 3) {
+            _heroTier = 'Silver Savior';
+          } else if (_totalDonations >= 1) {
+            _heroTier = 'Bronze Champion';
+          }
         }
       }
-    } catch (_) {
-      // Handled
+    } catch (e) {
+      debugPrint('DonorProvider.loadDonorData error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

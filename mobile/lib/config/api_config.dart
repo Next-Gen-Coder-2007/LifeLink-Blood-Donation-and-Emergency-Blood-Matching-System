@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ApiConfig {
   // Remote production cloud URL or local dev URL
   static const String productionBaseUrl = 'https://life-link-blood-donation-and-emerge-rust.vercel.app';
@@ -7,11 +10,37 @@ class ApiConfig {
   static String baseUrl = _determineBaseUrl();
 
   static String _determineBaseUrl() {
+    if (kIsWeb) {
+      return productionBaseUrl;
+    }
     return productionBaseUrl;
   }
 
-  static void setCustomBaseUrl(String url) {
-    baseUrl = url.replaceAll(RegExp(r'/+$'), '');
+  static Future<void> loadSavedBaseUrl() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final custom = prefs.getString('custom_api_base_url');
+      if (custom != null && custom.trim().isNotEmpty) {
+        baseUrl = custom.trim().replaceAll(RegExp(r'/+$'), '');
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> setCustomBaseUrl(String url) async {
+    final cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
+    baseUrl = cleanUrl;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('custom_api_base_url', cleanUrl);
+    } catch (_) {}
+  }
+
+  static Future<void> resetToDefault() async {
+    baseUrl = productionBaseUrl;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('custom_api_base_url');
+    } catch (_) {}
   }
 
   // Auth & User Endpoints

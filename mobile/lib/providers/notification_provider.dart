@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/api_config.dart';
 import '../core/network_client.dart';
@@ -7,14 +8,54 @@ class NotificationProvider with ChangeNotifier {
   List<NotificationModel> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
+  Timer? _pollingTimer;
+  String? _activeUserId;
+  String? _activeRole;
 
   List<NotificationModel> get notifications => _notifications;
   int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
 
-  Future<void> fetchNotifications(String userId, {String? role}) async {
-    _isLoading = true;
-    notifyListeners();
+  List<NotificationModel> get unreadNotifications =>
+      _notifications.where((n) => !n.isRead).toList();
+
+  List<NotificationModel> get emergencyAlerts => _notifications.where((n) =>
+      n.notificationType.contains('emergency') ||
+      n.notificationType.contains('direct') ||
+      n.notificationType.contains('urgent')).toList();
+
+  @override
+  void dispose() {
+    stopPolling();
+    super.dispose();
+  }
+
+  void startPolling(String userId, {String? role}) {
+    _activeUserId = userId;
+    _activeRole = role;
+    _pollingTimer?.cancel();
+    // Initial fetch
+    fetchNotifications(userId, role: role, isBackground: true);
+    // Poll every 15 seconds
+    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_activeUserId != null && _activeUserId!.isNotEmpty) {
+        fetchNotifications(_activeUserId!, role: _activeRole, isBackground: true);
+      }
+    });
+  }
+
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _activeUserId = null;
+    _activeRole = null;
+  }
+
+  Future<void> fetchNotifications(String userId, {String? role, bool isBackground = false}) async {
+    if (!isBackground) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final res = await NetworkClient.get(ApiConfig.notificationsByUser(userId, role: role));
@@ -27,10 +68,12 @@ class NotificationProvider with ChangeNotifier {
               .toList();
         }
       }
-    } catch (_) {
-      // Handled
+    } catch (e) {
+      debugPrint('Error fetching notifications: $e');
     } finally {
-      _isLoading = false;
+      if (!isBackground) {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -84,6 +127,10 @@ class NotificationProvider with ChangeNotifier {
   Future<void> deleteNotification(String notificationId) async {
     try {
       await NetworkClient.delete(ApiConfig.deleteNotification(notificationId));
+      final item = _notifications.firstWhere((n) => n.id == notificationId, orElse: () => _notifications.first);
+      if (!item.isRead && _unreadCount > 0) {
+        _unreadCount--;
+      }
       _notifications.removeWhere((n) => n.id == notificationId);
       notifyListeners();
     } catch (_) {}
