@@ -22,10 +22,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkSession() async {
-    await Future.delayed(const Duration(milliseconds: 1400));
+    final startTime = DateTime.now();
+    final auth = context.read<AuthProvider>();
+
+    // Wait until auth initialization finishes reading local storage
+    while (!auth.isInitialized && auth.isLoading) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    // Ensure a smooth, pleasant splash display duration (at least 1200ms)
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    if (elapsed < 1200) {
+      await Future.delayed(Duration(milliseconds: 1200 - elapsed));
+    }
+
     if (!mounted) return;
 
-    final auth = context.read<AuthProvider>();
     if (auth.isAuthenticated) {
       if (auth.isHospital) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HospitalMainNav()));

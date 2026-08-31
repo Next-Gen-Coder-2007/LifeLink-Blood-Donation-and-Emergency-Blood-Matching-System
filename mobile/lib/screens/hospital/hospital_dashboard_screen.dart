@@ -38,18 +38,25 @@ class HospitalDashboardScreen extends StatelessWidget {
               child: const Icon(LucideIcons.building2, color: AppTheme.medicalBlue, size: 18),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hosp?.hospitalName ?? auth.user?.name ?? 'Medical Facility',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.slate900),
-                ),
-                const Text(
-                  'Hospital Triage Center',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.slate500),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    hosp?.hospitalName ?? auth.user?.name ?? 'Medical Facility',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.slate900),
+                  ),
+                  const Text(
+                    'Hospital Triage Center',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.slate500),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -172,30 +179,36 @@ class HospitalDashboardScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           BloodGroupBadge(bloodGroup: p.bloodGroup),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   p.donorName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.slate900),
                                 ),
                                 Text(
                                   'ETA: ${p.estimatedArrival ?? "En route"} • ${p.donorPhone}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11, color: AppTheme.slate500),
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 6),
                           ElevatedButton(
                             onPressed: () {
                               _showVerifyDialog(context, p);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.medicalEmerald,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              visualDensity: VisualDensity.compact,
                             ),
                             child: const Text('Verify & Bank', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                           ),
@@ -255,7 +268,7 @@ class HospitalDashboardScreen extends StatelessWidget {
               else
                 ...activeReqs.map((req) => Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
@@ -264,29 +277,34 @@ class HospitalDashboardScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           BloodGroupBadge(bloodGroup: req.bloodGroup),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 6,
+                                  runSpacing: 2,
                                   children: [
                                     UrgencyPill(urgency: req.urgency),
-                                    const SizedBox(width: 8),
                                     Text(
                                       '${req.unitsRequired} Units Needed',
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.slate900),
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppTheme.slate900),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   req.patientName != null ? 'Patient: ${req.patientName}' : 'General Emergency Broadcast',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11, color: AppTheme.slate500),
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 6),
                           OutlinedButton(
                             onPressed: () {
                               hospProvider.fulfillRequest(req.id);
@@ -295,7 +313,8 @@ class HospitalDashboardScreen extends StatelessWidget {
                               side: const BorderSide(color: Color(0xFF86EFAC)),
                               backgroundColor: AppTheme.medicalEmeraldLight,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              visualDensity: VisualDensity.compact,
                             ),
                             child: const Text('Mark Fulfilled', style: TextStyle(color: Color(0xFF065F46), fontSize: 11, fontWeight: FontWeight.w800)),
                           ),

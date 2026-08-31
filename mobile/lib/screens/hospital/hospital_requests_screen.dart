@@ -47,19 +47,23 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
         children: [
           // Filter Tabs
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(bottom: BorderSide(color: AppTheme.slate200)),
             ),
-            child: Row(
-              children: [
-                _buildFilterChip('all', 'All (${allReqs.length})'),
-                const SizedBox(width: 8),
-                _buildFilterChip('searching', 'Active Broadcasts'),
-                const SizedBox(width: 8),
-                _buildFilterChip('fulfilled', 'Fulfilled'),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('all', 'All (${allReqs.length})'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('searching', 'Active Broadcasts'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('fulfilled', 'Fulfilled'),
+                ],
+              ),
             ),
           ),
 

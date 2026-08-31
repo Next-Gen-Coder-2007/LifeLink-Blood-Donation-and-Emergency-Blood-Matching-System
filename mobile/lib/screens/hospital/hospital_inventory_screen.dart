@@ -90,9 +90,9 @@ class HospitalInventoryScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.5,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
                 ),
                 itemCount: BloodMatchingEngine.allBloodGroups.length,
                 itemBuilder: (ctx, i) {
@@ -102,7 +102,7 @@ class HospitalInventoryScreen extends StatelessWidget {
                   final hospId = hosp?.id ?? auth.user?.profileId;
 
                   return Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),

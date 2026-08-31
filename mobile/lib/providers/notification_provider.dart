@@ -67,6 +67,11 @@ class NotificationProvider with ChangeNotifier {
               .map((json) => NotificationModel.fromJson(Map<String, dynamic>.from(json)))
               .toList();
         }
+      } else if (res is List) {
+        _notifications = res
+            .map((json) => NotificationModel.fromJson(Map<String, dynamic>.from(json)))
+            .toList();
+        _unreadCount = _notifications.where((n) => !n.isRead).length;
       }
     } catch (e) {
       debugPrint('Error fetching notifications: $e');

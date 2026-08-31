@@ -38,18 +38,25 @@ class DonorDashboardScreen extends StatelessWidget {
               child: const Icon(LucideIcons.droplet, color: AppTheme.primaryRed, size: 18),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  donor?.donorName ?? auth.user?.name ?? 'Volunteer Donor',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.slate900),
-                ),
-                Text(
-                  'Verified Donor • $donorGroup',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.slate500),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    donor?.donorName ?? auth.user?.name ?? 'Volunteer Donor',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.slate900),
+                  ),
+                  Text(
+                    'Verified Donor • $donorGroup',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.slate500),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -223,10 +230,14 @@ class DonorDashboardScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   p.hospitalName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF14532D)),
                                 ),
                                 Text(
                                   'Arrival ETA: ${p.estimatedArrival ?? "Committed"}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
                                 ),
                               ],

@@ -14,6 +14,7 @@ class AuthProvider with ChangeNotifier {
   HospitalModel? _hospitalProfile;
   String? _token;
   bool _isLoading = true;
+  bool _isInitialized = false;
   double _userLat = 40.7128;
   double _userLng = -74.006;
 
@@ -22,6 +23,7 @@ class AuthProvider with ChangeNotifier {
   HospitalModel? get hospitalProfile => _hospitalProfile;
   String? get token => _token;
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
   bool get isAuthenticated => _user != null;
   bool get isDonor => _user?.role == 'donor';
   bool get isHospital => _user?.role == 'hospital';
@@ -43,16 +45,45 @@ class AuthProvider with ChangeNotifier {
       final userRaw = prefs.getString('auth_user');
       _token = prefs.getString('auth_token');
 
+      // 1. Immediately restore cached user & profiles from local storage
       if (userRaw != null && userRaw.isNotEmpty) {
         final Map<String, dynamic> userMap = jsonDecode(userRaw);
         _user = UserModel.fromJson(userMap);
-        await _fetchRoleProfile();
+
+        final donorRaw = prefs.getString('auth_donor_profile');
+        if (donorRaw != null && donorRaw.isNotEmpty) {
+          try {
+            _donorProfile = DonorModel.fromJson(jsonDecode(donorRaw));
+            if (_donorProfile!.latitude != 0) {
+              _userLat = _donorProfile!.latitude;
+              _userLng = _donorProfile!.longitude;
+            }
+          } catch (_) {}
+        }
+
+        final hospRaw = prefs.getString('auth_hospital_profile');
+        if (hospRaw != null && hospRaw.isNotEmpty) {
+          try {
+            _hospitalProfile = HospitalModel.fromJson(jsonDecode(hospRaw));
+            if (_hospitalProfile!.latitude != 0) {
+              _userLat = _hospitalProfile!.latitude;
+              _userLng = _hospitalProfile!.longitude;
+            }
+          } catch (_) {}
+        }
       }
 
-      await syncLocation();
+      _isInitialized = true;
+      _isLoading = false;
+      notifyListeners();
+
+      // 2. Refresh freshness and GPS location asynchronously in the background
+      if (_user != null) {
+        _fetchRoleProfile().catchError((_) {});
+      }
+      syncLocation().catchError((_) {});
     } catch (_) {
-      // Ignored session restore error
-    } finally {
+      _isInitialized = true;
       _isLoading = false;
       notifyListeners();
     }
@@ -60,27 +91,30 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> syncLocation() async {
     try {
-      final permission = await Geolocator.checkPermission();
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission();
       }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-      ).timeout(const Duration(seconds: 4));
 
-      _userLat = pos.latitude;
-      _userLng = pos.longitude;
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        ).timeout(const Duration(seconds: 5));
 
-      if (_donorProfile != null) {
-        NetworkClient.put(ApiConfig.donorById(_donorProfile!.id), body: {
-          'latitude': _userLat,
-          'longitude': _userLng,
-        }).catchError((_) => null);
-      } else if (_hospitalProfile != null && (_hospitalProfile!.latitude == 0)) {
-        NetworkClient.put(ApiConfig.hospitalById(_hospitalProfile!.id), body: {
-          'latitude': _userLat,
-          'longitude': _userLng,
-        }).catchError((_) => null);
+        _userLat = pos.latitude;
+        _userLng = pos.longitude;
+
+        if (_donorProfile != null) {
+          NetworkClient.put(ApiConfig.donorById(_donorProfile!.id), body: {
+            'latitude': _userLat,
+            'longitude': _userLng,
+          }).catchError((_) => null);
+        } else if (_hospitalProfile != null && (_hospitalProfile!.latitude == 0)) {
+          NetworkClient.put(ApiConfig.hospitalById(_hospitalProfile!.id), body: {
+            'latitude': _userLat,
+            'longitude': _userLng,
+          }).catchError((_) => null);
+        }
       }
     } catch (_) {
       // Use fallback defaults
@@ -232,6 +266,9 @@ class AuthProvider with ChangeNotifier {
             _userLat = _donorProfile!.latitude;
             _userLng = _donorProfile!.longitude;
           }
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_donor_profile', jsonEncode(_donorProfile!.toJson()));
+          notifyListeners();
         }
       } else if (_user!.role == 'hospital') {
         dynamic res;
@@ -265,6 +302,9 @@ class AuthProvider with ChangeNotifier {
             _userLat = _hospitalProfile!.latitude;
             _userLng = _hospitalProfile!.longitude;
           }
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_hospital_profile', jsonEncode(_hospitalProfile!.toJson()));
+          notifyListeners();
         } else if (_user!.profileId != null && _user!.profileId!.isNotEmpty) {
           // Fallback minimal hospital profile so features never fail with null
           _hospitalProfile = HospitalModel(
@@ -277,6 +317,9 @@ class AuthProvider with ChangeNotifier {
             latitude: _userLat,
             longitude: _userLng,
           );
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_hospital_profile', jsonEncode(_hospitalProfile!.toJson()));
+          notifyListeners();
         }
       }
     } catch (_) {}
@@ -324,6 +367,7 @@ class AuthProvider with ChangeNotifier {
           availability: _donorProfile!.availability,
           lastDonationDate: _donorProfile!.lastDonationDate,
         );
+        await prefs.setString('auth_donor_profile', jsonEncode(_donorProfile!.toJson()));
       }
 
       if (_hospitalProfile != null) {
@@ -337,6 +381,7 @@ class AuthProvider with ChangeNotifier {
           latitude: _hospitalProfile!.latitude,
           longitude: _hospitalProfile!.longitude,
         );
+        await prefs.setString('auth_hospital_profile', jsonEncode(_hospitalProfile!.toJson()));
       }
 
       notifyListeners();
@@ -379,6 +424,9 @@ class AuthProvider with ChangeNotifier {
         lastDonationDate: (lastDonationDate != null && lastDonationDate.trim().isNotEmpty) ? lastDonationDate.trim() : null,
       );
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_donor_profile', jsonEncode(_donorProfile!.toJson()));
+
       if (_user != null) {
         _user = UserModel(
           id: _user!.id,
@@ -388,7 +436,6 @@ class AuthProvider with ChangeNotifier {
           profileId: _user!.profileId,
           bloodGroup: bloodGroup.toUpperCase(),
         );
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_user', jsonEncode(_user!.toJson()));
       }
 
@@ -428,6 +475,9 @@ class AuthProvider with ChangeNotifier {
         longitude: _hospitalProfile?.longitude ?? _userLng,
       );
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_hospital_profile', jsonEncode(_hospitalProfile!.toJson()));
+
       notifyListeners();
     } catch (_) {
       rethrow;
@@ -452,6 +502,8 @@ class AuthProvider with ChangeNotifier {
         availability: available,
         lastDonationDate: _donorProfile!.lastDonationDate,
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_donor_profile', jsonEncode(_donorProfile!.toJson()));
       notifyListeners();
     } catch (_) {
       rethrow;
@@ -466,6 +518,8 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('auth_user');
+    await prefs.remove('auth_donor_profile');
+    await prefs.remove('auth_hospital_profile');
     notifyListeners();
   }
 }

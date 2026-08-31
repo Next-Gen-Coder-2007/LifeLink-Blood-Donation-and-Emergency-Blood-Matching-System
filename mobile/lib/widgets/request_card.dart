@@ -45,27 +45,32 @@ class RequestCard extends StatelessWidget {
         children: [
           // Top Row: Badges & Target Group
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               UrgencyPill(urgency: request.urgency),
-              const SizedBox(width: 8),
-              if (request.matchLabel != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.medicalBlueLight,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                  ),
-                  child: Text(
-                    request.matchLabel!,
-                    style: const TextStyle(
-                      color: AppTheme.medicalBlue,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+              if (request.matchLabel != null) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.medicalBlueLight,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Text(
+                      request.matchLabel!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.medicalBlue,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
+              ],
               const Spacer(),
               BloodGroupBadge(bloodGroup: request.bloodGroup),
             ],
@@ -79,6 +84,8 @@ class RequestCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   request.hospitalName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppTheme.slate900,
                     fontWeight: FontWeight.w800,
@@ -86,12 +93,13 @@ class RequestCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${request.unitsRequired} Units',
                 style: const TextStyle(
                   color: AppTheme.primaryRed,
                   fontWeight: FontWeight.w900,
-                  fontSize: 15,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -114,7 +122,7 @@ class RequestCard extends StatelessWidget {
               if (request.distanceKm != null) ...[
                 const SizedBox(width: 6),
                 Text(
-                  '• ${DistanceEngine.formatDistance(request.distanceKm)} (${DistanceEngine.formatTravelTime(request.estimatedMins)})',
+                  '• ${DistanceEngine.formatDistance(request.distanceKm)}',
                   style: const TextStyle(
                     color: AppTheme.slate700,
                     fontWeight: FontWeight.w700,
