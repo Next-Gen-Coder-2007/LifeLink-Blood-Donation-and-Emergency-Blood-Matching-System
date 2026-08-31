@@ -138,7 +138,7 @@ sequenceDiagram
     autonumber
     actor Client as Client App (React / Mobile App)
     participant MW as Express Middleware (CORS / Helmet)
-    participant Router as API Router (/api/v1)
+    participant Router as API Router
     participant Controller as Domain Controller
     participant Model as Mongoose ODM
     participant DB as MongoDB Database
@@ -863,7 +863,7 @@ graph TD
 
 ## Complete RESTful API Specification
 
-Base URL: `http://127.0.0.1:8000` (or `/api/v1`)
+Base URL: `http://127.0.0.1:8000`
 
 ### Authentication and Session
 | Method | Endpoint | Description | Request Payload | Response Status |
